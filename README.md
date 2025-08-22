@@ -37,6 +37,16 @@ Sistema completo de control de fichajes laborales con geolocalización, diseñad
 
 ### Instalar y Ejecutar
 
+**Importante:** Antes de ejecutar la aplicación, debes configurar las variables de entorno de Supabase.
+
+1. Crea un archivo `.env` en la raíz del proyecto
+2. Añade las siguientes variables con los valores de tu proyecto Supabase:
+   ```
+   VITE_SUPABASE_URL=tu_url_de_supabase
+   VITE_SUPABASE_ANON_KEY=tu_clave_anonima_de_supabase
+   ```
+3. Puedes encontrar estos valores en tu dashboard de Supabase en "Project Settings" -> "API"
+
 ```bash
 # Instalar dependencias
 npm install
