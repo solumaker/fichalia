@@ -1,0 +1,146 @@
+import React, { useState } from 'react'
+import { Save } from 'lucide-react'
+import type { Profile, UserFormData } from '../../../types'
+import { Modal } from '../../ui/Modal'
+import { Button } from '../../ui/Button'
+
+interface UserModalProps {
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: (formData: UserFormData) => Promise<void>
+  editingUser: Profile | null
+  error: string
+}
+
+export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: UserModalProps) {
+  const [formData, setFormData] = useState<UserFormData>({
+    full_name: editingUser?.full_name || '',
+    email: editingUser?.email || '',
+    role: editingUser?.role || 'employee',
+    password: ''
+  })
+  const [loading, setLoading] = useState(false)
+
+  React.useEffect(() => {
+    if (editingUser) {
+      setFormData({
+        full_name: editingUser.full_name,
+        email: editingUser.email,
+        role: editingUser.role,
+        password: ''
+      })
+    } else {
+      setFormData({
+        full_name: '',
+        email: '',
+        role: 'employee',
+        password: ''
+      })
+    }
+  }, [editingUser, isOpen])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    
+    try {
+      await onSubmit(formData)
+    } catch (err) {
+      // Error is handled by parent component
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={onClose}
+      title={editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
+    >
+      <form onSubmit={handleSubmit}>
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
+            {error}
+          </div>
+        )}
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Nombre completo
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.full_name}
+              onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Ingresa el nombre completo"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Correo electrónico
+            </label>
+            <input
+              type="email"
+              required
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="correo@empresa.com"
+            />
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Rol
+            </label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value as 'employee' | 'admin' })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="employee">Empleado</option>
+              <option value="admin">Administrador</option>
+            </select>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Contraseña {editingUser && '(dejar vacío para mantener actual)'}
+            </label>
+            <input
+              type="password"
+              required={!editingUser}
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="••••••••"
+              minLength={6}
+            />
+          </div>
+        </div>
+        
+        <div className="flex justify-end space-x-3 mt-6">
+          <Button variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
+          >
+            {loading && (
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+            )}
+            <Save className="w-4 h-4 mr-2" />
+            {editingUser ? 'Actualizar' : 'Crear'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  )
+}
