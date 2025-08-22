@@ -41,10 +41,19 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    if (!editingUser && !formData.password.trim()) {
+      return // Don't submit if creating new user without password
+    }
+    
     setLoading(true)
     
     try {
       await onSubmit(formData)
+      // Only close modal if submission was successful
+      if (!error) {
+        onClose()
+      }
     } catch (err) {
       // Error is handled by parent component
     } finally {

@@ -59,23 +59,39 @@ export function AdminDashboard() {
   }
 
   const handleUserSubmit = async (formData: UserFormData) => {
-    if (!formData.password) {
+    if (!editingUser && !formData.password) {
       setError('La contraseña es requerida para nuevos usuarios')
       return
     }
     
-    await handleAsync(
-      () => UserService.createUser({
-        email: formData.email,
-        password: formData.password,
-        full_name: formData.full_name,
-        role: formData.role
-      }),
-      () => {
-        closeUserModal()
-        loadUsers()
-      }
-    )
+    if (editingUser) {
+      // Update existing user
+      await handleAsync(
+        () => UserService.updateUser(editingUser.id, {
+          full_name: formData.full_name,
+          email: formData.email,
+          role: formData.role
+        }),
+        () => {
+          closeUserModal()
+          loadUsers()
+        }
+      )
+    } else {
+      // Create new user
+      await handleAsync(
+        () => UserService.createUser({
+          email: formData.email,
+          password: formData.password,
+          full_name: formData.full_name,
+          role: formData.role
+        }),
+        () => {
+          closeUserModal()
+          loadUsers()
+        }
+      )
+    }
   }
 
   const viewEmployeeDetail = (employeeId: string) => {
