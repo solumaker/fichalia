@@ -50,12 +50,12 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
         throw new Error(result.error || 'Error al cargar usuarios')
       }
 
-      // Filter only active employees
-      const activeUsers = (result.users || [])
-        .filter((user: Profile) => user.active)
+      // Get all employees (active and inactive) - we'll filter by time entries later
+      const allUsers = (result || [])
+        .filter((user: Profile) => user.role === 'employee')
         .sort((a: Profile, b: Profile) => a.full_name.localeCompare(b.full_name))
         
-      setEmployees(activeUsers)
+      setEmployees(allUsers)
     } catch (err) {
       console.error('Error loading employees:', err)
     } finally {
@@ -94,9 +94,9 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
         throw new Error(result.error || 'Error al cargar fichajes')
       }
 
-      // Filter only active employees
+      // Get all time entries for employees in the date range
       const userIds = employees.map(e => e.id)
-      const filteredEntries = (result.timeEntries || [])
+      const allEntries = (result.timeEntries || [])
         .map((entry: any) => ({
           id: entry.id,
           user_id: entry.user_id,
@@ -107,9 +107,8 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
           address: entry.address,
           created_at: entry.created_at
         }))
-        .filter((e: TimeEntry) => userIds.includes(e.user_id))
       
-      setTimeEntries(filteredEntries)
+      setTimeEntries(allEntries)
     } catch (err) {
       console.error('Error loading time entries:', err)
     }
@@ -228,7 +227,15 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
   }
 
   // Group entries by employee and then by date
-  const employeeData = employees.map(employee => {
+  const employeeData = employees.filter(employee => {
+    // Only include employees that have time entries in the selected date range
+    const hasEntriesInRange = timeEntries.some(entry => entry.user_id === employee.id)
+    
+    // Also apply search filter
+    const matchesSearch = !searchTerm || employee.full_name.toLowerCase().includes(searchTerm.toLowerCase())
+    
+    return hasEntriesInRange && matchesSearch
+  }).map(employee => {
     const employeeEntries = timeEntries.filter(e => e.user_id === employee.id)
     
     // Group by date
@@ -282,13 +289,6 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
       employee,
       pairedEntries
     }
-  }).filter(data => {
-    // Filter by search term
-    if (searchTerm && !data.employee.full_name.toLowerCase().includes(searchTerm.toLowerCase())) {
-      return false
-    }
-    // Show all employees that match search, even if they have no entries in the date range
-    return true
   })
 
   const formatDuration = (minutes: number | null) => {
