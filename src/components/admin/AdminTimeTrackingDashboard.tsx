@@ -122,6 +122,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
 
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al registrar fichaje')
+      console.error('Error in handleTimeEntry:', err)
     } finally {
       setLoading(false)
     }
