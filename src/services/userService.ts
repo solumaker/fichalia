@@ -22,7 +22,7 @@ export class UserService {
       throw new Error(result.error || 'Error al cargar usuarios')
     }
 
-    return result.users || []
+    return result || []
   }
 
   static async createUser(userData: CreateUserRequest): Promise<ApiResponse<Profile>> {
