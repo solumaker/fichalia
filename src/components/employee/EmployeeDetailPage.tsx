@@ -58,7 +58,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   }, [dateRange, employee])
 
   const loadEmployeeData = async () => {
-    const users = await handleAsync(() => UserService.getAllUsers(), (error) => {
+    const users = await handleAsync(() => UserService.getAllUsers(), undefined, (error) => {
         console.error('Error loading employee:', error)
         if (error instanceof Error && error.message.includes('No hay sesión activa')) {
           signOut()
