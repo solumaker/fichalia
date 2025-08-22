@@ -29,6 +29,14 @@ export function AdminDashboard() {
     loadUsers()
   }, [])
 
+  // Monitor for session errors and force logout
+  useEffect(() => {
+    if (error && (error.includes('No hay sesión activa') || error.includes('Invalid Refresh Token'))) {
+      console.log('Session error detected, signing out user')
+      signOut()
+    }
+  }, [error, signOut])
+
   const loadUsers = async () => {
     const result = await handleAsync(
       () => UserService.getAllUsers(),

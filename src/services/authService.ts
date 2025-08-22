@@ -8,7 +8,7 @@ export class AuthService {
       const { data, error } = await supabase.auth.signInWithPassword(credentials)
 
       if (error) {
-        if (error.message.includes('Invalid Refresh Token')) {
+        if (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found')) {
           await supabase.auth.signOut()
         }
         throw new Error(error.message)
@@ -20,7 +20,7 @@ export class AuthService {
 
       return data.user
     } catch (error: any) {
-      if (error.message && error.message.includes('Invalid Refresh Token')) {
+      if (error.message && (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found'))) {
         await supabase.auth.signOut()
       }
       throw error
@@ -40,7 +40,7 @@ export class AuthService {
       })
 
       if (error) {
-        if (error.message.includes('Invalid Refresh Token')) {
+        if (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found')) {
           await supabase.auth.signOut()
         }
         throw error
@@ -52,7 +52,7 @@ export class AuthService {
 
       return data.user
     } catch (error: any) {
-      if (error.message && error.message.includes('Invalid Refresh Token')) {
+      if (error.message && (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found'))) {
         await supabase.auth.signOut()
       }
       throw error
@@ -70,7 +70,7 @@ export class AuthService {
     try {
       const { data: { session }, error } = await supabase.auth.getSession()
       if (error) {
-        if (error.message.includes('Invalid Refresh Token')) {
+        if (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found')) {
           await supabase.auth.signOut()
           return null
         }
@@ -78,7 +78,7 @@ export class AuthService {
       }
       return session
     } catch (error: any) {
-      if (error.message && error.message.includes('Invalid Refresh Token')) {
+      if (error.message && (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found'))) {
         await supabase.auth.signOut()
         return null
       }
@@ -98,7 +98,7 @@ export class AuthService {
         if (error.code === 'PGRST116') {
           return null // No profile found
         }
-        if (error.message && error.message.includes('Invalid Refresh Token')) {
+        if (error.message && (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found'))) {
           await supabase.auth.signOut()
           return null
         }
@@ -107,7 +107,7 @@ export class AuthService {
 
       return data
     } catch (error: any) {
-      if (error.message && error.message.includes('Invalid Refresh Token')) {
+      if (error.message && (error.message.includes('Invalid Refresh Token') || error.message.includes('refresh_token_not_found'))) {
         await supabase.auth.signOut()
         return null
       }
