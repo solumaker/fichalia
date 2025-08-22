@@ -52,7 +52,7 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
 
       // Get all employees (active and inactive) - we'll filter by time entries later
       const allUsers = (result || [])
-        .filter((user: Profile) => user.role === 'employee')
+        .filter((user: Profile) => user.role === 'employee' || user.role === 'admin')
         .sort((a: Profile, b: Profile) => a.full_name.localeCompare(b.full_name))
         
       setEmployees(allUsers)
