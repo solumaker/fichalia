@@ -417,22 +417,69 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           </div>
         </div>
 
-        {/* Time Entries History */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Historial de Fichajes</h2>
+        {/* Tab Navigation */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6" aria-label="Tabs">
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-blue-500 text-blue-600'
+                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4 mr-2" />
+                    {tab.label}
+                  </button>
+                )
+              })}
+            </nav>
           </div>
-          
-          <div className="p-6">
-            {pairedEntries.length === 0 ? (
-              <div className="text-center py-12 text-gray-500">
-                <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg mb-2">No hay fichajes en el rango seleccionado</p>
-                <p className="text-sm">Ajusta las fechas para ver más registros</p>
+        </div>
+
+        {/* Tab Content */}
+        <div className="space-y-8">
+          {activeTab === 'history' && (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900">Historial de Fichajes</h2>
               </div>
-            ) : (
-              <TimeEntriesHistory pairedEntries={pairedEntries} />
-            )}
+              
+              <div className="p-6">
+                {pairedEntries.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">
+                    <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg mb-2">No hay fichajes en el rango seleccionado</p>
+                    <p className="text-sm">Ajusta las fechas para ver más registros</p>
+                  </div>
+                ) : (
+                  <TimeEntriesHistory pairedEntries={pairedEntries} />
+                )}
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'profile' && employee && (
+            <ProfileExtended userId={employee.id} />
+          )}
+          
+          {activeTab === 'shifts' && employee && (
+            <ShiftSchedule userId={employee.id} />
+          )}
+          
+          {activeTab === 'salary' && employee && (
+            <SalaryConfigComponent userId={employee.id} />
+          )}
+          
+          {activeTab === 'reports' && employee && (
+            <OvertimeReport userId={employee.id} />
+          )}
+        </div>
           </div>
         </div>
       </div>
