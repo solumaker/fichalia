@@ -154,12 +154,12 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         role: employee.role,
         active: employee.active
       })
+      setEditError(null)
+      setNewPassword('')
+      setShowPasswordField(false)
     }
   }
 
-    setEditError(null)
-    setNewPassword('')
-    setShowPasswordField(false)
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
