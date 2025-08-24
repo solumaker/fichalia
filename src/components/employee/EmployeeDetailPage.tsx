@@ -479,8 +479,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             <OvertimeReport userId={employee.id} />
           )}
         </div>
-          </div>
-        </div>
       </div>
     </PageLayout>
     
