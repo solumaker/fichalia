@@ -238,6 +238,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         role: editFormData.role,
         active: editFormData.active
       })
+      
+      // Save extended profile (including image)
+      await ShiftManagementService.updateExtendedProfile(employee.id, profile)
+      
       await loadEmployeeData()
       
       // Update password if provided
