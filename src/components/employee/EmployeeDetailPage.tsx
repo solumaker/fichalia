@@ -427,43 +427,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             </div>
             
             {/* Action Buttons */}
-            <div className="flex items-center space-x-2 border-l border-gray-200 pl-3">
-              <Button
-                variant={employee.active ? 'danger' : 'success'}
-                size="sm"
-                onClick={() => {
-                  if (window.confirm(`¿Estás seguro de que quieres ${employee.active ? 'desactivar' : 'activar'} a ${employee.full_name}?`)) {
-                    toggleUserStatus()
-                  }
-                }}
-              >
-                {employee.active ? 'Desactivar' : 'Activar'}
-              </Button>
-              <Button variant="danger" size="sm" onClick={deleteUser}>
-                <Trash2 className="w-4 h-4 mr-1" />
-                Eliminar
-              </Button>
-              <Button
-                onClick={async () => {
-                  setSaving(true)
-                  setSuccess(null)
-                  setEditError(null)
-                  try {
-                    await ShiftManagementService.updateExtendedProfile(employee.id, profile)
-                    setSuccess('✅ Imagen de perfil guardada correctamente')
-                  } catch (err: any) {
-                    setEditError('Error al guardar la imagen: ' + err.message)
-                  } finally {
-                    setSaving(false)
-                  }
-                }}
-                loading={saving}
-                disabled={saving}
-              >
-                <Save className="w-4 h-4 mr-1" />
-                Guardar Imagen
-              </Button>
-            </div>
           </div>
         }
       />
