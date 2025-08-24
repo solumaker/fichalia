@@ -4,7 +4,6 @@ import { supabase, TimeEntry } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useGeolocation } from '../hooks/useGeolocation'
 import { ShiftManagementPage } from './shifts/ShiftManagementPage'
-import { ShiftManagementPage } from './shifts/ShiftManagementPage'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
