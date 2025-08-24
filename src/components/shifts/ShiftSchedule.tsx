@@ -377,7 +377,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
             onClick={handleSave}
             loading={saving}
             disabled={saving || timeSlots.length === 0}
-            className={saving ? 'cursor-wait' : ''}
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Guardando...' : 'Guardar Turnos'}
