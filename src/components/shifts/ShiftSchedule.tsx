@@ -101,6 +101,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   const handleSave = async () => {
     setSaving(true)
     setSuccess(null)
+    setErrors({})
 
     // Validate all active shifts
     const newErrors: { [key: number]: ShiftValidationError } = {}
@@ -125,12 +126,20 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
     try {
       await ShiftManagementService.saveWorkShifts(userId, shifts)
-      setSuccess('Turnos guardados correctamente')
+      setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
     } catch (error) {
       console.error('Error saving shifts:', error)
+      setSuccess('❌ Error al guardar los turnos. Inténtalo de nuevo.')
     } finally {
       setSaving(false)
+      
+      // Auto-hide success message after 3 seconds
+      if (success?.includes('✅')) {
+        setTimeout(() => {
+          setSuccess(null)
+        }, 3000)
+      }
     }
   }
 
@@ -187,7 +196,11 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
       <div className="p-6">
         {success && (
-          <div className="mb-6 p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg">
+          <div className={`mb-6 p-4 rounded-lg transition-all duration-300 ${
+            success.includes('✅') 
+              ? 'bg-green-100 border border-green-200 text-green-800' 
+              : 'bg-red-100 border border-red-200 text-red-800'
+          }`}>
             {success}
           </div>
         )}
@@ -297,9 +310,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
             onClick={handleSave}
             loading={saving}
             disabled={saving}
+            className={saving ? 'cursor-wait' : ''}
           >
             <Save className="w-4 h-4 mr-2" />
-            Guardar Turnos
+            {saving ? 'Guardando...' : 'Guardar Turnos'}
           </Button>
         </div>
       </div>
