@@ -15,6 +15,10 @@ import { DatePicker } from '../ui/DatePicker'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { TimeEntriesHistory } from './TimeEntriesHistory'
+import { ProfileExtended } from '../shifts/ProfileExtended'
+import { ShiftSchedule } from '../shifts/ShiftSchedule'
+import { SalaryConfigComponent } from '../shifts/SalaryConfig'
+import { OvertimeReport } from '../shifts/OvertimeReport'
 
 interface EmployeeDetailPageProps {
   employeeId: string
@@ -34,8 +38,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   const [showImageInput, setShowImageInput] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [showPasswordField, setShowPasswordField] = useState(false)
-  const [activeTab, setActiveTab] = useState<'history' | 'shifts'>('history')
-  const [showShiftManagement, setShowShiftManagement] = useState(false)
+  const [activeTab, setActiveTab] = useState<'history' | 'profile' | 'shifts' | 'salary' | 'reports'>('history')
   const [editFormData, setEditFormData] = useState({
     full_name: '',
     email: '',
@@ -274,9 +277,13 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
 
   const pairedEntries = TimeEntryUtils.createPairedEntries(timeEntries)
 
-  if (showShiftManagement) {
-    return <ShiftManagementPage onBack={() => setShowShiftManagement(false)} />
-  }
+  const tabs = [
+    { id: 'history' as const, label: 'Historial', icon: Calendar },
+    { id: 'profile' as const, label: 'Perfil', icon: User },
+    { id: 'shifts' as const, label: 'Turnos', icon: Clock },
+    { id: 'salary' as const, label: 'Salario', icon: DollarSign },
+    { id: 'reports' as const, label: 'Reportes', icon: BarChart3 }
+  ]
 
   return (
     <>
@@ -404,14 +411,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
               >
                 <Download className="w-4 h-4 mr-2" />
                 Exportar CSV
-              </Button>
-              <Button
-                onClick={() => setShowShiftManagement(true)}
-                variant="secondary"
-                size="sm"
-              >
-                <Settings className="w-4 h-4 mr-2" />
-                Gestión de Turnos
               </Button>
             </div>
           </div>
