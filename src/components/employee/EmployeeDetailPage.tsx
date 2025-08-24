@@ -548,17 +548,22 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                   
                   <div className="mt-6 pt-4 border-t border-gray-200">
                     <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <input
-                          type="checkbox"
-                          id="userActive"
-                          checked={editFormData.active}
-                          onChange={(e) => setEditFormData({ ...editFormData, active: e.target.checked })}
-                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                        />
-                        <label htmlFor="userActive" className="text-sm font-medium text-gray-700">
-                          Usuario activo
-                        </label>
+                      <div className="flex items-center space-x-4">
+                        <span className="text-sm font-medium text-gray-700">Estado del usuario:</span>
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, active: !editFormData.active })}
+                          className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                            editFormData.active
+                              ? 'bg-green-100 text-green-800 border-2 border-green-300 hover:bg-green-200'
+                              : 'bg-red-100 text-red-800 border-2 border-red-300 hover:bg-red-200'
+                          }`}
+                        >
+                          <div className={`w-3 h-3 rounded-full mr-2 ${
+                            editFormData.active ? 'bg-green-500' : 'bg-red-500'
+                          }`} />
+                          {editFormData.active ? 'ACTIVO' : 'INACTIVO'}
+                        </button>
                       </div>
                       
                       <div className="flex space-x-3">
@@ -566,7 +571,11 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                           type="button"
                           variant="danger"
                           size="sm"
-                          onClick={toggleUserStatus}
+                          onClick={() => {
+                            if (window.confirm(`¿Estás seguro de que quieres ${editFormData.active ? 'desactivar' : 'activar'} a ${employee.full_name}?`)) {
+                              toggleUserStatus()
+                            }
+                          }}
                         >
                           {editFormData.active ? 'Desactivar' : 'Activar'}
                         </Button>
@@ -574,13 +583,23 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                           type="button"
                           variant="danger"
                           size="sm"
-                          onClick={deleteUser}
+                          onClick={() => {
+                            if (window.confirm(`¿Estás seguro de que quieres eliminar permanentemente a ${employee.full_name}? Esta acción no se puede deshacer.`)) {
+                              deleteUser()
+                            }
+                          }}
                         >
                           <Trash2 className="w-4 h-4 mr-1" />
                           Eliminar
                         </Button>
                         <button
                           type="submit"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            if (window.confirm(`¿Confirmas que quieres guardar los cambios para ${employee.full_name}?`)) {
+                              handleEditSubmit(e as any)
+                            }
+                          }}
                           className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
                         >
                           <Save className="w-4 h-4 mr-2" />
