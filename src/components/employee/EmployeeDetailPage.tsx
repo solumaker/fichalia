@@ -429,25 +429,106 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6" aria-label="Tabs">
-              {tabs.map((tab) => {
-                const Icon = tab.icon
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    }`}
+            <div className="flex items-center justify-between px-6">
+              {/* Tab Navigation */}
+              <nav className="flex space-x-8" aria-label="Tabs">
+                {tabs.map((tab) => {
+                  const Icon = tab.icon
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors ${
+                        activeTab === tab.id
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4 mr-2" />
+                      {tab.label}
+                    </button>
+                  )
+                })}
+              </nav>
+
+              {/* Profile Image Controls */}
+              <div className="flex items-center space-x-4 py-2">
+                {/* Profile Image Preview */}
+                <div className="flex items-center space-x-3">
+                  <div className="relative">
+                    {imagePreview ? (
+                      <img
+                        src={imagePreview}
+                        alt={employee.full_name}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                        onError={handleImageError}
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
+                        <User className="w-5 h-5 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Vertical Separator */}
+                <div className="h-8 w-px bg-gray-200"></div>
+
+                {/* Image URL Input */}
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="url"
+                    value={profile.profile_image_url?.startsWith('data:') ? '' : (profile.profile_image_url || '')}
+                    onChange={(e) => updateProfile('profile_image_url', e.target.value)}
+                    className="w-64 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="URL de imagen de perfil"
+                  />
+                  
+                  {/* Upload Button */}
+                  <div>
+                    <input
+                      type="file"
+                      id="profile-image-upload-tab"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="profile-image-upload-tab"
+                      className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 cursor-pointer transition-colors"
+                    >
+                      <Camera className="w-4 h-4 mr-1" />
+                      Subir
+                    </label>
+                  </div>
+
+                  {/* Save Image Button */}
+                  <Button
+                    onClick={async () => {
+                      setSaving(true)
+                      setSuccess(null)
+                      setEditError(null)
+                      try {
+                        await ShiftManagementService.updateExtendedProfile(employee.id, profile)
+                        setSuccess('✅ Imagen actualizada correctamente')
+                        setTimeout(() => setSuccess(null), 3000)
+                      } catch (err: any) {
+                        setEditError('Error al actualizar imagen: ' + err.message)
+                        setTimeout(() => setEditError(null), 5000)
+                      } finally {
+                        setSaving(false)
+                      }
+                    }}
+                    loading={saving}
+                    size="sm"
+                    variant="primary"
                   >
-                    <Icon className="w-4 h-4 mr-2" />
-                    {tab.label}
-                  </button>
-                )
-              })}
-            </nav>
+                    <Save className="w-4 h-4 mr-1" />
+                    Guardar Imagen
+                  </Button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
