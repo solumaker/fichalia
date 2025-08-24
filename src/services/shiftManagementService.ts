@@ -53,16 +53,22 @@ export class ShiftManagementService {
   }
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
-    // Delete existing shifts
-    await supabase
+    // Delete existing shifts first
+    const { error: deleteError } = await supabase
       .from('work_shifts')
       .delete()
       .eq('user_id', userId)
 
-    // Insert new shifts
-    const shiftsToInsert = shifts.map(shift => ({
+    if (deleteError) throw deleteError
+
+    // Insert new shifts with unique identifiers
+    const shiftsToInsert = shifts.map((shift, index) => ({
       user_id: userId,
-      ...shift
+      day_of_week: shift.day_of_week,
+      start_time: shift.start_time,
+      end_time: shift.end_time,
+      is_active: shift.is_active,
+      break_duration_minutes: shift.break_duration_minutes || 0
     }))
 
     const { error } = await supabase

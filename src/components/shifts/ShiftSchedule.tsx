@@ -54,19 +54,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const addTimeSlot = () => {
-    // Find the first available day that's not already used
-    const usedDays = new Set(timeSlots.map(slot => slot.day_of_week))
-    const availableDay = DAYS_OF_WEEK.find(day => !usedDays.has(day.value))
-    
-    // If all days are used, show error and don't add
-    if (!availableDay) {
-      setSuccess('❌ Ya tienes franjas para todos los días de la semana')
-      return
-    }
-    
+    // Default to Monday (1) for new slots
     const newSlot: TimeSlot = {
       id: generateId(),
-      day_of_week: availableDay.value,
+      day_of_week: 1, // Monday by default
       start_time: '09:00',
       end_time: '17:00'
     }
@@ -143,22 +134,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setSaving(true)
     setSuccess(null)
     setErrors({})
-
-    // Check for duplicate days
-    const dayCount = new Map<number, number>()
-    timeSlots.forEach(slot => {
-      dayCount.set(slot.day_of_week, (dayCount.get(slot.day_of_week) || 0) + 1)
-    })
-    
-    const duplicateDays = Array.from(dayCount.entries()).filter(([_, count]) => count > 1)
-    if (duplicateDays.length > 0) {
-      const duplicateDayNames = duplicateDays.map(([dayValue]) => 
-        DAYS_OF_WEEK.find(d => d.value === dayValue)?.label
-      ).join(', ')
-      setSuccess(`❌ No puedes tener múltiples franjas para el mismo día: ${duplicateDayNames}`)
-      setSaving(false)
-      return
-    }
 
     // Validate all time slots
     const newErrors: { [key: string]: ShiftValidationError } = {}
@@ -296,20 +271,11 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                           onChange={(e) => updateTimeSlot(slot.id, 'day_of_week', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          {DAYS_OF_WEEK.map(day => {
-                            const isUsedByOtherSlot = timeSlots.some(otherSlot => 
-                              otherSlot.id !== slot.id && otherSlot.day_of_week === day.value
-                            )
-                            return (
-                              <option 
-                                key={day.value} 
-                                value={day.value}
-                                disabled={isUsedByOtherSlot}
-                              >
-                                {day.label}{isUsedByOtherSlot ? ' (Ya usado)' : ''}
-                              </option>
-                            )
-                          })}
+                          {DAYS_OF_WEEK.map(day => (
+                            <option key={day.value} value={day.value}>
+                              {day.label}
+                            </option>
+                          ))}
                         </select>
                       </div>
 
@@ -402,6 +368,18 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                 <p className="font-semibold text-blue-900">
                   {new Set(timeSlots.map(slot => slot.day_of_week)).size}
                 </p>
+                <div>
+                  <p className="text-blue-700">Días con múltiples franjas</p>
+                  <p className="font-semibold text-blue-900">
+                    {(() => {
+                      const dayCount = new Map<number, number>()
+                      timeSlots.forEach(slot => {
+                        dayCount.set(slot.day_of_week, (dayCount.get(slot.day_of_week) || 0) + 1)
+                      })
+                      return Array.from(dayCount.values()).filter(count => count > 1).length
+                    })()}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
