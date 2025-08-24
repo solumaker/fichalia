@@ -296,18 +296,20 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                           onChange={(e) => updateTimeSlot(slot.id, 'day_of_week', parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          {DAYS_OF_WEEK.map(day => (
+                          {DAYS_OF_WEEK.map(day => {
                             const isUsedByOtherSlot = timeSlots.some(otherSlot => 
                               otherSlot.id !== slot.id && otherSlot.day_of_week === day.value
+                            )
+                            return (
                               <option 
                                 key={day.value} 
                                 value={day.value}
                                 disabled={isUsedByOtherSlot}
                               >
                                 {day.label}{isUsedByOtherSlot ? ' (Ya usado)' : ''}
-                              {day.label}
-                            </option>
-                          ))}
+                              </option>
+                            )
+                          })}
                         </select>
                       </div>
 
