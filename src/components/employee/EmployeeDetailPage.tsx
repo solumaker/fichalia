@@ -584,7 +584,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                         </label>
                         <input
                           type="url"
-                          value={profile.profile_image_url || ''}
+                          value={profile.profile_image_url?.startsWith('data:') ? '' : (profile.profile_image_url || '')}
                           onChange={(e) => updateProfile('profile_image_url', e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="https://ejemplo.com/imagen.jpg"
