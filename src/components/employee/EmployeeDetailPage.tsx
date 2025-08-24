@@ -279,10 +279,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
 
   const tabs = [
     { id: 'history' as const, label: 'Historial', icon: Calendar },
-    { id: 'profile' as const, label: 'Perfil', icon: User },
     { id: 'shifts' as const, label: 'Turnos', icon: Clock },
     { id: 'salary' as const, label: 'Salario', icon: DollarSign },
-    { id: 'reports' as const, label: 'Reportes', icon: BarChart3 }
+    { id: 'reports' as const, label: 'Reportes', icon: BarChart3 },
+    { id: 'profile' as const, label: 'Perfil', icon: User }
   ]
 
   return (
@@ -373,49 +373,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           </div>
         )}
 
-        {/* Filters and Summary */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
-          <div className="flex flex-wrap items-center gap-4 justify-between">
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={() => setPresetDateRange('today')}>
-                  Hoy
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setPresetDateRange('week')}>
-                  Esta semana
-                </Button>
-                <Button variant="secondary" size="sm" onClick={() => setPresetDateRange('month')}>
-                  Este mes
-                </Button>
-              </div>
-              
-              <div className="flex gap-4">
-                <DatePicker
-                  label="Desde"
-                  value={dateRange.start}
-                  onChange={(value) => setDateRange({ ...dateRange, start: value })}
-                />
-                <DatePicker
-                  label="Hasta"
-                  value={dateRange.end}
-                  onChange={(value) => setDateRange({ ...dateRange, end: value })}
-                />
-              </div>
-            </div>
-
-            <div className="flex gap-2">
-              <Button
-                onClick={exportToCSV}
-                variant="primary"
-                size="sm"
-              >
-                <Download className="w-4 h-4 mr-2" />
-                Exportar CSV
-              </Button>
-            </div>
-          </div>
-        </div>
-
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
           <div className="border-b border-gray-200">
@@ -440,6 +397,51 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             </nav>
           </div>
         </div>
+
+        {/* Filters and Summary - Only show for history tab */}
+        {activeTab === 'history' && (
+          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
+            <div className="flex flex-wrap items-center gap-4 justify-between">
+              <div className="flex flex-wrap items-center gap-4">
+                <div className="flex gap-2">
+                  <Button variant="secondary" size="sm" onClick={() => setPresetDateRange('today')}>
+                    Hoy
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setPresetDateRange('week')}>
+                    Esta semana
+                  </Button>
+                  <Button variant="secondary" size="sm" onClick={() => setPresetDateRange('month')}>
+                    Este mes
+                  </Button>
+                </div>
+                
+                <div className="flex gap-4">
+                  <DatePicker
+                    label="Desde"
+                    value={dateRange.start}
+                    onChange={(value) => setDateRange({ ...dateRange, start: value })}
+                  />
+                  <DatePicker
+                    label="Hasta"
+                    value={dateRange.end}
+                    onChange={(value) => setDateRange({ ...dateRange, end: value })}
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  onClick={exportToCSV}
+                  variant="primary"
+                  size="sm"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Exportar CSV
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Tab Content */}
         <div className="space-y-8">
