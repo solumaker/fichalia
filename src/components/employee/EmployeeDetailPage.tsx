@@ -49,6 +49,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   })
   const [imagePreview, setImagePreview] = useState<string>('')
   const [success, setSuccess] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
   const [editFormData, setEditFormData] = useState({
     full_name: '',
     email: '',
@@ -230,6 +231,8 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
     if (!employee) return
 
     setEditError(null)
+    setSuccess(null)
+    setSaving(true)
     try {
       console.log('Updating user with data:', editFormData)
       await UserService.updateUser(employee.id, {
@@ -242,6 +245,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
       // Save extended profile (including image)
       await ShiftManagementService.updateExtendedProfile(employee.id, profile)
       
+      setSuccess('✅ Cambios guardados correctamente')
       await loadEmployeeData()
       
       // Update password if provided
@@ -269,16 +273,16 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             throw new Error(result.error || 'Error al actualizar contraseña')
           }
         } catch (passwordError: any) {
+          setEditError('Usuario actualizado, pero error al cambiar contraseña: ' + passwordError.message)
+          setSaving(false)
           return
         }
       }
       
-      // Force a small delay to ensure the UI updates
-      setTimeout(() => {
-        window.location.reload()
-      }, 500)
     } catch (err: any) {
       setEditError(err.message || 'Error al actualizar el usuario')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -535,6 +539,19 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                 {editError && (
                   <div className="mb-6 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
                     {editError}
+                  </div>
+                )}
+                
+                {success && (
+                  <div className="mb-6 p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg flex items-center">
+                    <div className="flex-shrink-0 mr-3">
+                      <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                      </svg>
+                    </div>
+                    <div className="text-sm font-medium">
+                      {success}
+                    </div>
                   </div>
                 )}
                 
@@ -797,16 +814,24 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                       </Button>
                       <button
                         type="submit"
+                        disabled={saving}
                         onClick={(e) => {
                           e.preventDefault()
                           if (window.confirm(`¿Confirmas que quieres guardar los cambios para ${employee.full_name}?`)) {
                             handleEditSubmit(e as any)
                           }
                         }}
-                        className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
+                        className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 text-sm ${
+                          saving 
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                        }`}
                       >
+                        {saving && (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
+                        )}
                         <Save className="w-4 h-4 mr-2" />
-                        Guardar Cambios
+                        {saving ? 'Guardando...' : 'Guardar Cambios'}
                       </button>
                     </div>
                   </div>
