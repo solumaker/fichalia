@@ -154,8 +154,16 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       return
     }
 
-    // Convert time slots to shifts format
-    const shiftsToSave = timeSlots.map(slot => ({
+    // Process time slots to handle multiple slots per day
+    // Keep only the last time slot for each day to comply with unique constraint
+    const daySlotMap = new Map<number, TimeSlot>()
+    
+    timeSlots.forEach(slot => {
+      daySlotMap.set(slot.day_of_week, slot)
+    })
+    
+    // Convert processed slots to shifts format
+    const shiftsToSave = Array.from(daySlotMap.values()).map(slot => ({
       day_of_week: slot.day_of_week,
       start_time: slot.start_time,
       end_time: slot.end_time,
