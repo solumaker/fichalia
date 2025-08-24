@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Clock, DollarSign, BarChart3 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
 import { UserService } from '../../services/userService'
@@ -15,7 +15,6 @@ import { DatePicker } from '../ui/DatePicker'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { TimeEntriesHistory } from './TimeEntriesHistory'
-import { ShiftManagementPage } from '../shifts/ShiftManagementPage'
 
 interface EmployeeDetailPageProps {
   employeeId: string
