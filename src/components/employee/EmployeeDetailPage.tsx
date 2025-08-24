@@ -622,6 +622,11 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                             type="tel"
                             value={profile.phone || ''}
                             onChange={(e) => updateProfile('phone', e.target.value)}
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="+34 600 000 000"
+                          />
+                        </div>
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             <Building className="w-4 h-4 inline mr-2" />
@@ -635,7 +640,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                             placeholder="Ej: Desarrollo, Marketing, Ventas"
                           />
                         </div>
-                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             <Briefcase className="w-4 h-4 inline mr-2" />
@@ -649,7 +654,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                             placeholder="Ej: Desarrollador Senior, Gerente de Ventas"
                           />
                         </div>
-                            placeholder="+34 600 000 000"
+                        
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">
                             <Calendar className="w-4 h-4 inline mr-2" />
@@ -662,7 +667,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                             className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           />
                         </div>
-                          />
                         <div className="md:col-span-2">
                           <div className="flex items-center justify-between mb-2">
                             <label className="block text-sm font-medium text-gray-700">
@@ -692,7 +696,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                     </div>
                   </div>
                 </div>
-                        </div>
                 {/* Additional Information */}
                 <div className="mb-8 p-4 bg-gray-50 rounded-lg">
                   <h3 className="text-sm font-medium text-gray-900 mb-3">
