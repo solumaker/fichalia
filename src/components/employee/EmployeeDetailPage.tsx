@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
 import { UserService } from '../../services/userService'
@@ -15,6 +15,7 @@ import { DatePicker } from '../ui/DatePicker'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { TimeEntriesHistory } from './TimeEntriesHistory'
+import { ShiftManagementPage } from '../shifts/ShiftManagementPage'
 
 interface EmployeeDetailPageProps {
   employeeId: string
@@ -34,6 +35,8 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   const [showImageInput, setShowImageInput] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [showPasswordField, setShowPasswordField] = useState(false)
+  const [activeTab, setActiveTab] = useState<'history' | 'shifts'>('history')
+  const [showShiftManagement, setShowShiftManagement] = useState(false)
   const [editFormData, setEditFormData] = useState({
     full_name: '',
     email: '',
@@ -272,6 +275,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
 
   const pairedEntries = TimeEntryUtils.createPairedEntries(timeEntries)
 
+  if (showShiftManagement) {
+    return <ShiftManagementPage onBack={() => setShowShiftManagement(false)} />
+  }
+
   return (
     <>
     <PageLayout>
@@ -390,13 +397,24 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
               </div>
             </div>
 
-            <Button
-              onClick={exportToCSV}
-              variant="primary"
-            >
-              <Download className="w-4 h-4 mr-2" />
-              Exportar CSV
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={exportToCSV}
+                variant="primary"
+                size="sm"
+              >
+                <Download className="w-4 h-4 mr-2" />
+                Exportar CSV
+              </Button>
+              <Button
+                onClick={() => setShowShiftManagement(true)}
+                variant="secondary"
+                size="sm"
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                Gestión de Turnos
+              </Button>
+            </div>
           </div>
         </div>
 
