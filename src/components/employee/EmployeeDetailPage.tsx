@@ -368,24 +368,18 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             {/* Employee info */}
             <div className="flex items-center space-x-2 sm:space-x-3">
               <div className="relative">
-                {employeeImage ? (
+                {imagePreview ? (
                   <img
-                    src={employeeImage}
+                    src={imagePreview}
                     alt={employee.full_name}
                     className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
-                    onError={() => setEmployeeImage('')}
+                    onError={handleImageError}
                   />
                 ) : (
                   <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center">
                     <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
                   </div>
                 )}
-                <button
-                  onClick={() => setShowImageInput(!showImageInput)}
-                  className="absolute -bottom-0.5 -right-0.5 w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 text-white rounded-full flex items-center justify-center hover:bg-blue-600 transition-colors"
-                >
-                  <Edit className="w-2 h-2 sm:w-2.5 sm:h-2.5" />
-                </button>
               </div>
               <div className="min-w-0">
                 <h2 className="text-sm sm:text-lg font-semibold text-gray-900 truncate">{employee.full_name}</h2>
@@ -401,33 +395,98 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             }`}>
               {employee.active ? 'Activo' : 'Inactivo'}
             </span>
+          </div>
+        }
+        rightContent={
+          <div className="flex items-center space-x-2">
+            {/* Profile Image Upload */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="url"
+                value={profile.profile_image_url?.startsWith('data:') ? '' : (profile.profile_image_url || '')}
+                onChange={(e) => updateProfile('profile_image_url', e.target.value)}
+                className="w-48 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="URL de imagen de perfil"
+              />
+              <div className="relative">
+                <input
+                  type="file"
+                  id="profile-image-upload-header"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                <label
+                  htmlFor="profile-image-upload-header"
+                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 cursor-pointer transition-colors"
+                >
+                  <Camera className="w-4 h-4 mr-1" />
+                  Subir
+                </label>
+              </div>
+            </div>
             
-            {/* Edit button */}
+            {/* Action Buttons */}
+            <div className="flex items-center space-x-2 border-l border-gray-200 pl-3">
+              <Button
+                variant={employee.active ? 'danger' : 'success'}
+                size="sm"
+                onClick={() => {
+                  if (window.confirm(`¿Estás seguro de que quieres ${employee.active ? 'desactivar' : 'activar'} a ${employee.full_name}?`)) {
+                    toggleUserStatus()
+                  }
+                }}
+              >
+                {employee.active ? 'Desactivar' : 'Activar'}
+              </Button>
+              <Button variant="danger" size="sm" onClick={deleteUser}>
+                <Trash2 className="w-4 h-4 mr-1" />
+                Eliminar
+              </Button>
+              <Button
+                onClick={async () => {
+                  setSaving(true)
+                  setSuccess(null)
+                  setEditError(null)
+                  try {
+                    await ShiftManagementService.updateExtendedProfile(employee.id, profile)
+                    setSuccess('✅ Imagen de perfil guardada correctamente')
+                  } catch (err: any) {
+                    setEditError('Error al guardar la imagen: ' + err.message)
+                  } finally {
+                    setSaving(false)
+                  }
+                }}
+                loading={saving}
+                disabled={saving}
+              >
+                <Save className="w-4 h-4 mr-1" />
+                Guardar Imagen
+              </Button>
+            </div>
           </div>
         }
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Image URL Input */}
-        {showImageInput && (
-          <div className="bg-white rounded-xl shadow-sm p-4 border border-gray-200 mb-6">
-            <div className="flex items-center space-x-3">
-              <label className="text-sm font-medium text-gray-700">URL de la imagen:</label>
-              <input
-                type="url"
-                value={employeeImage}
-                onChange={(e) => setEmployeeImage(e.target.value)}
-                placeholder="https://ejemplo.com/imagen.jpg"
-                className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setShowImageInput(false)}
-              >
-                Cerrar
-              </Button>
-            </div>
+        {/* Success/Error Messages */}
+        {(success || editError) && (
+          <div className="mb-6">
+            {success && (
+              <div className="p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg flex items-center">
+                <div className="flex-shrink-0 mr-3">
+                  <svg className="w-5 h-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="text-sm font-medium">{success}</div>
+              </div>
+            )}
+            {editError && (
+              <div className="p-4 bg-red-100 border border-red-200 text-red-800 rounded-lg">
+                {editError}
+              </div>
+            )}
           </div>
         )}
 
