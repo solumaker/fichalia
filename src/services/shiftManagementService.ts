@@ -190,7 +190,7 @@ export class ShiftManagementService {
         let shiftHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60)
         if (shiftHours < 0) shiftHours += 24 // Handle overnight shifts
         
-        shiftHours -= shift.break_duration_minutes / 60
+        shiftHours -= (shift.break_duration_minutes || 0) / 60
         totalHours += shiftHours * dayCount[shift.day_of_week]
       }
     })

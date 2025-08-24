@@ -17,7 +17,6 @@ export interface WorkShift {
   start_time: string // HH:MM format
   end_time: string // HH:MM format
   is_active: boolean
-  break_duration_minutes: number
   created_at: string
   updated_at: string
 }
@@ -27,7 +26,18 @@ export interface WorkShiftInput {
   start_time: string
   end_time: string
   is_active: boolean
-  break_duration_minutes: number
+}
+
+export interface TimeSlot {
+  id: string
+  start_time: string
+  end_time: string
+}
+
+export interface DaySchedule {
+  day_of_week: number
+  is_active: boolean
+  time_slots: TimeSlot[]
 }
 
 // Salary configuration types
