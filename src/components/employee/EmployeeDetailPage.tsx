@@ -355,47 +355,13 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
     <PageLayout>
       <Header
         leftContent={
-          <div className="flex items-center space-x-3 sm:space-x-4">
-            {/* Back button */}
-            <button
-              onClick={onBack}
-              className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Volver</span>
-            </button>
-            
-            {/* Employee info */}
-            <div className="flex items-center space-x-2 sm:space-x-3">
-              <div className="relative">
-                {imagePreview ? (
-                  <img
-                    src={imagePreview}
-                    alt={employee.full_name}
-                    className="w-8 h-8 sm:w-10 sm:h-10 rounded-full object-cover"
-                    onError={handleImageError}
-                  />
-                ) : (
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400" />
-                  </div>
-                )}
-              </div>
-              <div className="min-w-0">
-                <h2 className="text-sm sm:text-lg font-semibold text-gray-900 truncate">{employee.full_name}</h2>
-                <p className="text-xs sm:text-sm text-gray-500 truncate">{employee.email}</p>
-              </div>
-            </div>
-            
-            {/* Status badge */}
-            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-              employee.active 
-                ? 'bg-green-100 text-green-700' 
-                : 'bg-red-100 text-red-700'
-            }`}>
-              {employee.active ? 'Activo' : 'Inactivo'}
-            </span>
-          </div>
+          <button
+            onClick={onBack}
+            className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4 mr-1" />
+            <span className="hidden sm:inline">Volver</span>
+          </button>
         }
         rightContent={
           <div className="flex items-center space-x-2">
