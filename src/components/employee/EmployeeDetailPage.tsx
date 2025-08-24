@@ -114,6 +114,32 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
     setImagePreview('')
   }
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Por favor selecciona un archivo de imagen válido')
+      return
+    }
+
+    // Validate file size (5MB max)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('El archivo es demasiado grande. Máximo 5MB permitido.')
+      return
+    }
+
+    // Create preview URL
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const imageUrl = event.target?.result as string
+      setImagePreview(imageUrl)
+      updateProfile('profile_image_url', imageUrl)
+    }
+    reader.readAsDataURL(file)
+  }
+
   const loadTimeEntries = async () => {
     if (!employee) return
 
@@ -531,7 +557,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                         </div>
                       </div>
                       
-                      <div className="mt-4">
+                      <div className="mt-4 space-y-3">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           URL de la imagen
                         </label>
@@ -542,8 +568,30 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="https://ejemplo.com/imagen.jpg"
                         />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Pega la URL de tu foto de perfil
+                        
+                        <div className="flex items-center justify-center">
+                          <span className="text-xs text-gray-500">o</span>
+                        </div>
+                        
+                        <div>
+                          <input
+                            type="file"
+                            id="profile-image-upload"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                          />
+                          <label
+                            htmlFor="profile-image-upload"
+                            className="inline-flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 cursor-pointer transition-colors"
+                          >
+                            <Camera className="w-4 h-4 mr-2" />
+                            Subir desde ordenador
+                          </label>
+                        </div>
+                        
+                        <p className="text-xs text-gray-500">
+                          Formatos: JPG, PNG, GIF (máx. 5MB)
                         </p>
                       </div>
                     </div>
