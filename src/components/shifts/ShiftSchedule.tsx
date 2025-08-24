@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Clock, Save, Plus, Trash2, AlertCircle, X } from 'lucide-react'
+import { Clock, Save, Plus, X } from 'lucide-react'
 import { ShiftManagementService } from '../../services/shiftManagementService'
-import type { WorkShift, DaySchedule, TimeSlot, ShiftValidationError } from '../../types/shift-management.types'
+import type { WorkShift, TimeSlot, ShiftValidationError } from '../../types/shift-management.types'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 
@@ -21,56 +21,70 @@ const DAYS_OF_WEEK = [
 ]
 
 export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
-  const [schedules, setSchedules] = useState<DaySchedule[]>([])
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [errors, setErrors] = useState<{ [key: number]: ShiftValidationError }>({})
+  const [errors, setErrors] = useState<{ [key: string]: ShiftValidationError }>({})
   const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
-    loadSchedules()
+    loadTimeSlots()
   }, [userId])
 
   const generateId = () => Math.random().toString(36).substr(2, 9)
 
-  const loadSchedules = async () => {
+  const loadTimeSlots = async () => {
     try {
       const existingShifts = await ShiftManagementService.getWorkShifts(userId)
       
-      // Group shifts by day and convert to time slots
-      const dayGroups = new Map<number, WorkShift[]>()
-      existingShifts.forEach(shift => {
-        if (!dayGroups.has(shift.day_of_week)) {
-          dayGroups.set(shift.day_of_week, [])
-        }
-        dayGroups.get(shift.day_of_week)!.push(shift)
-      })
+      // Convert shifts to time slots
+      const slots: TimeSlot[] = existingShifts.map(shift => ({
+        id: generateId(),
+        day_of_week: shift.day_of_week,
+        start_time: shift.start_time,
+        end_time: shift.end_time
+      }))
 
-      const initialSchedules = DAYS_OF_WEEK.map(day => {
-        const dayShifts = dayGroups.get(day.value) || []
-        return {
-          day_of_week: day.value,
-          is_active: dayShifts.length > 0,
-          time_slots: dayShifts.length > 0 
-            ? dayShifts.map(shift => ({
-                id: generateId(),
-                start_time: shift.start_time,
-                end_time: shift.end_time
-              }))
-            : [{
-                id: generateId(),
-                start_time: '09:00',
-                end_time: '17:00'
-              }]
-        }
-      })
-
-      setSchedules(initialSchedules)
+      setTimeSlots(slots)
     } catch (error) {
-      console.error('Error loading schedules:', error)
+      console.error('Error loading time slots:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const addTimeSlot = () => {
+    const newSlot: TimeSlot = {
+      id: generateId(),
+      day_of_week: 1, // Default to Monday
+      start_time: '09:00',
+      end_time: '17:00'
+    }
+    
+    setTimeSlots([...timeSlots, newSlot])
+    setSuccess(null)
+  }
+
+  const removeTimeSlot = (slotId: string) => {
+    setTimeSlots(timeSlots.filter(slot => slot.id !== slotId))
+    setSuccess(null)
+    
+    // Clear errors for this slot
+    const newErrors = { ...errors }
+    delete newErrors[slotId]
+    setErrors(newErrors)
+  }
+
+  const updateTimeSlot = (slotId: string, field: keyof TimeSlot, value: string | number) => {
+    setTimeSlots(timeSlots.map(slot => 
+      slot.id === slotId ? { ...slot, [field]: value } : slot
+    ))
+    setSuccess(null)
+    
+    // Clear errors for this slot
+    const newErrors = { ...errors }
+    delete newErrors[slotId]
+    setErrors(newErrors)
   }
 
   const validateTimeSlot = (slot: TimeSlot): ShiftValidationError => {
@@ -93,63 +107,26 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     return errors
   }
 
-  const toggleDay = (dayIndex: number) => {
-    const newSchedules = [...schedules]
-    newSchedules[dayIndex].is_active = !newSchedules[dayIndex].is_active
-    setSchedules(newSchedules)
-    setSuccess(null)
+  const calculateTotalHours = () => {
+    return timeSlots.reduce((total, slot) => {
+      const start = new Date(`2000-01-01T${slot.start_time}:00`)
+      const end = new Date(`2000-01-01T${slot.end_time}:00`)
+      
+      let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+      if (hours < 0) hours += 24 // Handle overnight shifts
+      
+      return total + Math.max(0, hours)
+    }, 0)
   }
 
-  const addTimeSlot = (dayIndex: number) => {
-    const newSchedules = [...schedules]
-    const lastSlot = newSchedules[dayIndex].time_slots[newSchedules[dayIndex].time_slots.length - 1]
+  const calculateSlotHours = (slot: TimeSlot) => {
+    const start = new Date(`2000-01-01T${slot.start_time}:00`)
+    const end = new Date(`2000-01-01T${slot.end_time}:00`)
     
-    // Smart default: start where last slot ended
-    const newStartTime = lastSlot ? lastSlot.end_time : '09:00'
-    const newEndTime = lastSlot ? 
-      String(parseInt(lastSlot.end_time.split(':')[0]) + 1).padStart(2, '0') + ':00' : 
-      '17:00'
+    let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+    if (hours < 0) hours += 24
     
-    newSchedules[dayIndex].time_slots.push({
-      id: generateId(),
-      start_time: newStartTime,
-      end_time: newEndTime
-    })
-    
-    setSchedules(newSchedules)
-    setSuccess(null)
-  }
-
-  const removeTimeSlot = (dayIndex: number, slotId: string) => {
-    const newSchedules = [...schedules]
-    newSchedules[dayIndex].time_slots = newSchedules[dayIndex].time_slots.filter(slot => slot.id !== slotId)
-    
-    // If no slots left, add a default one
-    if (newSchedules[dayIndex].time_slots.length === 0) {
-      newSchedules[dayIndex].time_slots.push({
-        id: generateId(),
-        start_time: '09:00',
-        end_time: '17:00'
-      })
-    }
-    
-    setSchedules(newSchedules)
-    setSuccess(null)
-  }
-
-  const updateTimeSlot = (dayIndex: number, slotId: string, field: 'start_time' | 'end_time', value: string) => {
-    const newSchedules = [...schedules]
-    const slotIndex = newSchedules[dayIndex].time_slots.findIndex(slot => slot.id === slotId)
-    if (slotIndex !== -1) {
-      newSchedules[dayIndex].time_slots[slotIndex][field] = value
-    }
-    setSchedules(newSchedules)
-
-    // Clear errors for this shift
-    const newErrors = { ...errors }
-    delete newErrors[dayIndex]
-    setErrors(newErrors)
-    setSuccess(null)
+    return Math.max(0, hours)
   }
 
   const handleSave = async () => {
@@ -157,36 +134,15 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setSuccess(null)
     setErrors({})
 
-    // Convert schedules to shifts format
-    const shiftsToSave: any[] = []
-    
-    schedules.forEach(schedule => {
-      if (schedule.is_active) {
-        schedule.time_slots.forEach(slot => {
-          shiftsToSave.push({
-            day_of_week: schedule.day_of_week,
-            start_time: slot.start_time,
-            end_time: slot.end_time,
-            is_active: true,
-            break_duration_minutes: 0 // Default value for compatibility
-          })
-        })
-      }
-    })
-
-    // Validate all active time slots
-    const newErrors: { [key: number]: ShiftValidationError } = {}
+    // Validate all time slots
+    const newErrors: { [key: string]: ShiftValidationError } = {}
     let hasErrors = false
 
-    schedules.forEach((schedule, dayIndex) => {
-      if (schedule.is_active) {
-        schedule.time_slots.forEach(slot => {
-          const slotErrors = validateTimeSlot(slot)
-          if (Object.keys(slotErrors).length > 0) {
-            newErrors[dayIndex] = slotErrors
-            hasErrors = true
-          }
-        })
+    timeSlots.forEach(slot => {
+      const slotErrors = validateTimeSlot(slot)
+      if (Object.keys(slotErrors).length > 0) {
+        newErrors[slot.id] = slotErrors
+        hasErrors = true
       }
     })
 
@@ -197,58 +153,30 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       return
     }
 
+    // Convert time slots to shifts format
+    const shiftsToSave = timeSlots.map(slot => ({
+      day_of_week: slot.day_of_week,
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      is_active: true,
+      break_duration_minutes: 0
+    }))
+
     try {
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccess(null)
+      }, 3000)
     } catch (error) {
       console.error('Error saving shifts:', error)
       setSuccess('❌ Error al guardar los turnos. Inténtalo de nuevo.')
     } finally {
       setSaving(false)
-      
-      // Auto-hide success message after 3 seconds
-      if (success?.includes('✅')) {
-        setTimeout(() => {
-          setSuccess(null)
-        }, 3000)
-      }
     }
-  }
-
-  const calculateWeeklyHours = () => {
-    return schedules.reduce((total, schedule) => {
-      if (!schedule.is_active) return total
-
-      return total + schedule.time_slots.reduce((dayTotal, slot) => {
-        const start = new Date(`2000-01-01T${slot.start_time}:00`)
-        const end = new Date(`2000-01-01T${slot.end_time}:00`)
-        
-        let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-        if (hours < 0) hours += 24 // Handle overnight shifts
-        
-        return dayTotal + Math.max(0, hours)
-      }, 0)
-    }, 0)
-  }
-
-  const getTotalSlotsForDay = (dayIndex: number) => {
-    return schedules[dayIndex]?.time_slots.length || 0
-  }
-
-  const getDayTotalHours = (dayIndex: number) => {
-    const schedule = schedules[dayIndex]
-    if (!schedule?.is_active) return 0
-
-    return schedule.time_slots.reduce((total, slot) => {
-      const start = new Date(`2000-01-01T${slot.start_time}:00`)
-      const end = new Date(`2000-01-01T${slot.end_time}:00`)
-      
-      let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-      if (hours < 0) hours += 24
-      
-      return total + Math.max(0, hours)
-    }, 0)
   }
 
   if (loading) {
@@ -259,8 +187,9 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     )
   }
 
-  const weeklyHours = calculateWeeklyHours()
-  const monthlyHours = weeklyHours * 4.33 // Average weeks per month
+  const totalHours = calculateTotalHours()
+  const weeklyHours = totalHours // This is now total hours across all slots
+  const monthlyHours = weeklyHours * 4.33
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -272,16 +201,16 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
               Gestión de Turnos
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Configura múltiples franjas horarias por día
+              Crea múltiples franjas horarias para cualquier día
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600">Horas semanales</p>
+            <p className="text-sm text-gray-600">Total de horas</p>
             <p className="text-lg font-semibold text-blue-600">
-              {ShiftManagementService.formatHours(weeklyHours)}
+              {ShiftManagementService.formatHours(totalHours)}
             </p>
             <p className="text-xs text-gray-500">
-              ~{ShiftManagementService.formatHours(monthlyHours)} mensuales
+              {timeSlots.length} franja{timeSlots.length !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -299,122 +228,155 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         )}
 
         <div className="space-y-4">
-          {DAYS_OF_WEEK.map((day, dayIndex) => {
-            const schedule = schedules[dayIndex]
-            const dayErrors = errors[dayIndex] || {}
-            const totalSlots = getTotalSlotsForDay(dayIndex)
-            const dayHours = getDayTotalHours(dayIndex)
+          {/* Add Time Slot Button */}
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-medium text-gray-700">Franjas Horarias</h3>
+            <Button
+              onClick={addTimeSlot}
+              variant="secondary"
+              size="sm"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Franja
+            </Button>
+          </div>
 
-            return (
-              <div key={day.value} className="border border-gray-200 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={schedule?.is_active || false}
-                      onChange={() => toggleDay(dayIndex)}
-                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                    />
-                    <label className="ml-3 text-sm font-medium text-gray-900">
-                      {day.label}
-                    </label>
-                    {schedule?.is_active && totalSlots > 1 && (
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                        {totalSlots} franjas
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center space-x-3">
-                    {schedule?.is_active && (
-                      <>
-                        <span className="text-xs text-gray-500">
-                          {ShiftManagementService.formatHours(dayHours)}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => addTimeSlot(dayIndex)}
-                          className="inline-flex items-center px-2 py-1 text-xs font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+          {/* Time Slots List */}
+          {timeSlots.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm mb-4">No hay franjas horarias configuradas</p>
+              <Button onClick={addTimeSlot} variant="primary" size="sm">
+                <Plus className="w-4 h-4 mr-2" />
+                Agregar Primera Franja
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {timeSlots.map((slot, index) => {
+                const slotErrors = errors[slot.id] || {}
+                const slotHours = calculateSlotHours(slot)
+                
+                return (
+                  <div key={slot.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div className="flex items-center gap-4">
+                      {/* Day Selector */}
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Día
+                        </label>
+                        <select
+                          value={slot.day_of_week}
+                          onChange={(e) => updateTimeSlot(slot.id, 'day_of_week', parseInt(e.target.value))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         >
-                          <Plus className="w-3 h-3 mr-1" />
-                          Franja
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                          {DAYS_OF_WEEK.map(day => (
+                            <option key={day.value} value={day.value}>
+                              {day.label}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
-                {schedule?.is_active && (
-                  <div className="space-y-3">
-                    {schedule.time_slots.map((slot, slotIndex) => (
-                      <div key={slot.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3 flex-1">
-                          <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Inicio
-                            </label>
-                            <input
-                              type="time"
-                              value={slot.start_time}
-                              onChange={(e) => updateTimeSlot(dayIndex, slot.id, 'start_time', e.target.value)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                dayErrors.start_time ? 'border-red-300' : 'border-gray-300'
-                              }`}
-                            />
-                          </div>
-                          <div className="flex-1">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Fin
-                            </label>
-                            <input
-                              type="time"
-                              value={slot.end_time}
-                              onChange={(e) => updateTimeSlot(dayIndex, slot.id, 'end_time', e.target.value)}
-                              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                                dayErrors.end_time ? 'border-red-300' : 'border-gray-300'
-                              }`}
-                            />
-                          </div>
-                          <div className="text-xs text-gray-500 min-w-[60px] text-center">
-                            {(() => {
-                              const start = new Date(`2000-01-01T${slot.start_time}:00`)
-                              const end = new Date(`2000-01-01T${slot.end_time}:00`)
-                              let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-                              if (hours < 0) hours += 24
-                              return ShiftManagementService.formatHours(Math.max(0, hours))
-                            })()}
-                          </div>
-                        </div>
-                        {schedule.time_slots.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeTimeSlot(dayIndex, slot.id)}
-                            className="p-1 text-red-500 hover:text-red-700 hover:bg-red-50 rounded transition-colors"
-                            title="Eliminar franja"
-                          >
-                            <X className="w-4 h-4" />
-                          </button>
+                      {/* Start Time */}
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Inicio
+                        </label>
+                        <input
+                          type="time"
+                          value={slot.start_time}
+                          onChange={(e) => updateTimeSlot(slot.id, 'start_time', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            slotErrors.start_time ? 'border-red-300' : 'border-gray-300'
+                          }`}
+                        />
+                        {slotErrors.start_time && (
+                          <p className="text-xs text-red-600 mt-1">{slotErrors.start_time}</p>
                         )}
                       </div>
-                    ))}
-                    
-                    {dayErrors.start_time && (
-                      <p className="text-xs text-red-600">{dayErrors.start_time}</p>
-                    )}
-                    {dayErrors.end_time && (
-                      <p className="text-xs text-red-600">{dayErrors.end_time}</p>
-                    )}
+
+                      {/* End Time */}
+                      <div className="flex-1">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Fin
+                        </label>
+                        <input
+                          type="time"
+                          value={slot.end_time}
+                          onChange={(e) => updateTimeSlot(slot.id, 'end_time', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                            slotErrors.end_time ? 'border-red-300' : 'border-gray-300'
+                          }`}
+                        />
+                        {slotErrors.end_time && (
+                          <p className="text-xs text-red-600 mt-1">{slotErrors.end_time}</p>
+                        )}
+                      </div>
+
+                      {/* Duration Display */}
+                      <div className="text-center min-w-[80px]">
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Duración
+                        </label>
+                        <div className="text-sm font-semibold text-blue-600 py-2">
+                          {ShiftManagementService.formatHours(slotHours)}
+                        </div>
+                      </div>
+
+                      {/* Remove Button */}
+                      <div className="flex items-end pb-2">
+                        <button
+                          type="button"
+                          onClick={() => removeTimeSlot(slot.id)}
+                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                          title="Eliminar franja"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                )}
-              </div>
-            )
-          })}
+                )
+              })}
+            </div>
+          )}
         </div>
+
+        {/* Summary */}
+        {timeSlots.length > 0 && (
+          <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+            <h3 className="text-sm font-medium text-blue-900 mb-2">Resumen</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-blue-700">Total de franjas</p>
+                <p className="font-semibold text-blue-900">{timeSlots.length}</p>
+              </div>
+              <div>
+                <p className="text-blue-700">Horas totales</p>
+                <p className="font-semibold text-blue-900">{ShiftManagementService.formatHours(totalHours)}</p>
+              </div>
+              <div>
+                <p className="text-blue-700">Promedio por franja</p>
+                <p className="font-semibold text-blue-900">
+                  {timeSlots.length > 0 ? ShiftManagementService.formatHours(totalHours / timeSlots.length) : '0h 0m'}
+                </p>
+              </div>
+              <div>
+                <p className="text-blue-700">Días únicos</p>
+                <p className="font-semibold text-blue-900">
+                  {new Set(timeSlots.map(slot => slot.day_of_week)).size}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-end mt-6">
           <Button
             onClick={handleSave}
             loading={saving}
-            disabled={saving}
+            disabled={saving || timeSlots.length === 0}
             className={saving ? 'cursor-wait' : ''}
           >
             <Save className="w-4 h-4 mr-2" />

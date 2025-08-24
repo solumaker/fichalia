@@ -1,3 +1,31 @@
+// Work shift types
+export interface WorkShift {
+  id: string
+  user_id: string
+  day_of_week: number // 0=Sunday, 6=Saturday
+  start_time: string // HH:MM format
+  end_time: string // HH:MM format
+  is_active: boolean
+  break_duration_minutes?: number
+  created_at: string
+  updated_at: string
+}
+
+export interface WorkShiftInput {
+  day_of_week: number
+  start_time: string
+  end_time: string
+  is_active: boolean
+  break_duration_minutes?: number
+}
+
+export interface TimeSlot {
+  id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+}
+
 // Extended user profile types
 export interface UserProfileExtended {
   id: string
@@ -9,36 +37,6 @@ export interface UserProfileExtended {
   updated_at: string
 }
 
-// Work shift types
-export interface WorkShift {
-  id: string
-  user_id: string
-  day_of_week: number // 0=Sunday, 6=Saturday
-  start_time: string // HH:MM format
-  end_time: string // HH:MM format
-  is_active: boolean
-  created_at: string
-  updated_at: string
-}
-
-export interface WorkShiftInput {
-  day_of_week: number
-  start_time: string
-  end_time: string
-  is_active: boolean
-}
-
-export interface TimeSlot {
-  id: string
-  start_time: string
-  end_time: string
-}
-
-export interface DaySchedule {
-  day_of_week: number
-  is_active: boolean
-  time_slots: TimeSlot[]
-}
 
 // Salary configuration types
 export interface SalaryConfig {
