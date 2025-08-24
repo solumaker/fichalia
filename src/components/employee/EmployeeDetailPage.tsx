@@ -32,13 +32,13 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState<DateRange>(DateUtils.getLastNDaysRange(30))
   const [showEditModal, setShowEditModal] = useState(false)
-  const [editError, setEditError] = useState<string | null>(null)
   const { signOut } = useAuth()
   const [employeeImage, setEmployeeImage] = useState<string>('')
   const [showImageInput, setShowImageInput] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [showPasswordField, setShowPasswordField] = useState(false)
   const [activeTab, setActiveTab] = useState<'history' | 'profile' | 'shifts' | 'salary' | 'reports'>('history')
+  const [editError, setEditError] = useState<string | null>(null)
   const [editFormData, setEditFormData] = useState({
     full_name: '',
     email: '',
@@ -147,7 +147,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   }
 
   const openEditModal = () => {
-    setEditError(null)
     if (employee) {
       setEditFormData({
         full_name: employee.full_name,
@@ -156,15 +155,11 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         active: employee.active
       })
     }
-    setShowEditModal(true)
   }
 
-  const closeEditModal = () => {
-    setShowEditModal(false)
     setEditError(null)
     setNewPassword('')
     setShowPasswordField(false)
-  }
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -206,12 +201,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             throw new Error(result.error || 'Error al actualizar contraseña')
           }
         } catch (passwordError: any) {
-          setEditError('Usuario actualizado, pero error al cambiar contraseña: ' + passwordError.message)
           return
         }
       }
       
-      closeEditModal()
       // Force a small delay to ensure the UI updates
       setTimeout(() => {
         window.location.reload()
@@ -338,13 +331,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             </span>
             
             {/* Edit button */}
-            <button
-              onClick={openEditModal}
-              className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <Edit className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Editar</span>
-            </button>
           </div>
         }
       />
@@ -466,7 +452,146 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           )}
           
           {activeTab === 'profile' && employee && (
-            <ProfileExtended userId={employee.id} />
+            <div className="space-y-8">
+              <ProfileExtended userId={employee.id} />
+              
+              {/* User Management Form */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div className="p-6 border-b border-gray-200">
+                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                    <Edit className="w-5 h-5 mr-2" />
+                    Gestión de Usuario
+                  </h2>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Edita la información básica y configuración del usuario
+                  </p>
+                </div>
+
+                <form onSubmit={handleEditSubmit} className="p-6" autoComplete="off">
+                  {editError && (
+                    <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
+                      {editError}
+                    </div>
+                  )}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Nombre completo
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={editFormData.full_name}
+                        onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Ingresa el nombre completo"
+                        autoComplete="name"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Correo electrónico
+                      </label>
+                      <input
+                        type="email"
+                        required
+                        value={editFormData.email}
+                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="correo@empresa.com"
+                        autoComplete="email"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Rol
+                      </label>
+                      <select
+                        value={editFormData.role}
+                        onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as 'employee' | 'admin' })}
+                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="employee">Empleado</option>
+                        <option value="admin">Administrador</option>
+                      </select>
+                    </div>
+                   
+                   <div>
+                     <div className="flex items-center justify-between mb-2">
+                       <label className="block text-sm font-medium text-gray-700">
+                         Contraseña
+                       </label>
+                       <button
+                         type="button"
+                         onClick={() => setShowPasswordField(!showPasswordField)}
+                         className="text-xs text-blue-600 hover:text-blue-700"
+                       >
+                         {showPasswordField ? 'Cancelar cambio' : 'Cambiar contraseña'}
+                       </button>
+                     </div>
+                     {showPasswordField && (
+                       <input
+                         type="password"
+                         value={newPassword}
+                         onChange={(e) => setNewPassword(e.target.value)}
+                         className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                         placeholder="Nueva contraseña (mínimo 6 caracteres)"
+                         minLength={6}
+                         autoComplete="new-password"
+                       />
+                     )}
+                   </div>
+                  </div>
+                  
+                  <div className="mt-6 pt-4 border-t border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="checkbox"
+                          id="userActive"
+                          checked={editFormData.active}
+                          onChange={(e) => setEditFormData({ ...editFormData, active: e.target.checked })}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                        />
+                        <label htmlFor="userActive" className="text-sm font-medium text-gray-700">
+                          Usuario activo
+                        </label>
+                      </div>
+                      
+                      <div className="flex space-x-3">
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          onClick={toggleUserStatus}
+                        >
+                          {editFormData.active ? 'Desactivar' : 'Activar'}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="danger"
+                          size="sm"
+                          onClick={deleteUser}
+                        >
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Eliminar
+                        </Button>
+                        <button
+                          type="submit"
+                          className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
+                        >
+                          <Save className="w-4 h-4 mr-2" />
+                          Guardar Cambios
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </form>
+              </div>
+            </div>
           )}
           
           {activeTab === 'shifts' && employee && (
@@ -483,139 +608,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         </div>
       </div>
     </PageLayout>
-    
-    {/* Edit User Modal */}
-    {employee && (
-      <div className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 ${showEditModal ? '' : 'hidden'}`}>
-        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-xl w-full max-w-md">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-gray-900">Editar Usuario</h3>
-              <button
-                onClick={closeEditModal}
-                className="p-1 text-gray-400 hover:text-gray-600"
-              >
-                ×
-              </button>
-            </div>
-          </div>
-          
-          <form onSubmit={(e) => {
-            handleEditSubmit(e)
-          }} className="p-6" autoComplete="off">
-            {editError && (
-              <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
-                {editError}
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombre completo
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={editFormData.full_name}
-                  onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Ingresa el nombre completo"
-                  autoComplete="name"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Correo electrónico
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={editFormData.email}
-                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="correo@empresa.com"
-                  autoComplete="email"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Rol
-                </label>
-                <select
-                  value={editFormData.role}
-                  onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as 'employee' | 'admin' })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="employee">Empleado</option>
-                  <option value="admin">Administrador</option>
-                </select>
-              </div>
-             
-             <div>
-               <div className="flex items-center justify-between mb-2">
-                 <label className="block text-sm font-medium text-gray-700">
-                   Contraseña
-                 </label>
-                 <button
-                   type="button"
-                   onClick={() => setShowPasswordField(!showPasswordField)}
-                   className="text-xs text-blue-600 hover:text-blue-700"
-                 >
-                   {showPasswordField ? 'Cancelar cambio' : 'Cambiar contraseña'}
-                 </button>
-               </div>
-               {showPasswordField && (
-                 <input
-                   type="password"
-                   value={newPassword}
-                   onChange={(e) => setNewPassword(e.target.value)}
-                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                   placeholder="Nueva contraseña (mínimo 6 caracteres)"
-                   minLength={6}
-                   autoComplete="new-password"
-                 />
-               )}
-             </div>
-             
-             <div className="pt-4 border-t border-gray-200">
-               <div className="flex items-center space-x-3">
-                 <input
-                   type="checkbox"
-                   id="userActive"
-                  checked={editFormData.active}
-                  onChange={(e) => setEditFormData({ ...editFormData, active: e.target.checked })}
-                   className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
-                 />
-                 <label htmlFor="userActive" className="text-sm font-medium text-gray-700">
-                   Usuario activo
-                 </label>
-               </div>
-             </div>
-            </div>
-            
-            <div className="flex justify-end space-x-3 mt-6">
-              <Button
-                type="button"
-                variant="secondary"
-                onClick={closeEditModal}
-              >
-                Cancelar
-              </Button>
-              <button
-                type="submit"
-                className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
-              >
-                <Save className="w-4 h-4 mr-2" />
-                Actualizar
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    )}
     </>
   )
 }
