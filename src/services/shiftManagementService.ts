@@ -23,11 +23,17 @@ export class ShiftManagementService {
   }
 
   static async updateExtendedProfile(userId: string, profile: Partial<UserProfileExtended>): Promise<void> {
+    // Convert empty date strings to null to avoid Supabase date validation errors
+    const sanitizedProfile = { ...profile }
+    if (sanitizedProfile.hire_date === '') {
+      sanitizedProfile.hire_date = null
+    }
+
     const { error } = await supabase
       .from('user_profiles_extended')
       .upsert({
         id: userId,
-        ...profile,
+        ...sanitizedProfile,
         updated_at: new Date().toISOString()
       })
 
