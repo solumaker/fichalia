@@ -4,7 +4,6 @@ import { supabase, TimeEntry } from '../../lib/supabase'
 import { useAuth } from '../../hooks/useAuth'
 import { useGeolocation } from '../../hooks/useGeolocation'
 import { ShiftManagementPage } from '../shifts/ShiftManagementPage'
-import { ShiftManagementPage } from '../shifts/ShiftManagementPage'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -15,7 +14,6 @@ interface AdminTimeTrackingDashboardProps {
 export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrackingDashboardProps) {
   const { user, profile, signOut } = useAuth()
   const { getCurrentLocation, loading: geoLoading } = useGeolocation()
-  const [showShiftManagement, setShowShiftManagement] = useState(false)
   const [showShiftManagement, setShowShiftManagement] = useState(false)
   const [lastEntry, setLastEntry] = useState<TimeEntry | null>(null)
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
@@ -193,10 +191,6 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
     return <ShiftManagementPage onBack={() => setShowShiftManagement(false)} />
   }
 
-  if (showShiftManagement) {
-    return <ShiftManagementPage onBack={() => setShowShiftManagement(false)} />
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
@@ -208,7 +202,6 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setShowShiftManagement(true)}
               onClick={() => setShowShiftManagement(true)}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
               title="Gestión de Turnos"
