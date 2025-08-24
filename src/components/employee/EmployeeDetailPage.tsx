@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Clock, DollarSign, BarChart3 } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Clock, DollarSign, BarChart3, Phone, Building, Briefcase, Camera } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
+import type { UserProfileExtended } from '../../types/shift-management.types'
 import { UserService } from '../../services/userService'
+import { ShiftManagementService } from '../../services/shiftManagementService'
 import { TimeEntryService } from '../../services/timeEntryService'
 import { TimeEntryUtils } from '../../utils/timeEntryUtils'
 import { DateUtils } from '../../utils/dateUtils'
@@ -15,7 +17,6 @@ import { DatePicker } from '../ui/DatePicker'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { TimeEntriesHistory } from './TimeEntriesHistory'
-import { ProfileExtended } from '../shifts/ProfileExtended'
 import { ShiftSchedule } from '../shifts/ShiftSchedule'
 import { SalaryConfigComponent } from '../shifts/SalaryConfig'
 import { OvertimeReport } from '../shifts/OvertimeReport'
@@ -39,6 +40,15 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   const [showPasswordField, setShowPasswordField] = useState(false)
   const [activeTab, setActiveTab] = useState<'history' | 'profile' | 'shifts' | 'salary' | 'reports'>('history')
   const [editError, setEditError] = useState<string | null>(null)
+  const [profile, setProfile] = useState<Partial<UserProfileExtended>>({
+    profile_image_url: '',
+    phone: '',
+    department: '',
+    position: '',
+    hire_date: ''
+  })
+  const [imagePreview, setImagePreview] = useState<string>('')
+  const [success, setSuccess] = useState<string | null>(null)
   const [editFormData, setEditFormData] = useState({
     full_name: '',
     email: '',
@@ -53,6 +63,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   useEffect(() => {
     if (employee) {
       loadTimeEntries()
+      loadProfile()
       setEditFormData({
         full_name: employee.full_name,
         email: employee.email,
@@ -74,6 +85,33 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
       setEmployee(foundEmployee || null)
     }
     setLoading(false)
+  }
+
+  const loadProfile = async () => {
+    if (!employee) return
+    
+    try {
+      const existingProfile = await ShiftManagementService.getExtendedProfile(employee.id)
+      if (existingProfile) {
+        setProfile(existingProfile)
+        setImagePreview(existingProfile.profile_image_url || '')
+      }
+    } catch (error) {
+      console.error('Error loading extended profile:', error)
+    }
+  }
+
+  const updateProfile = (field: keyof UserProfileExtended, value: string) => {
+    setProfile(prev => ({ ...prev, [field]: value }))
+    setSuccess(null)
+    
+    if (field === 'profile_image_url') {
+      setImagePreview(value)
+    }
+  }
+
+  const handleImageError = () => {
+    setImagePreview('')
   }
 
   const loadTimeEntries = async () => {
@@ -452,31 +490,34 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           )}
           
           {activeTab === 'profile' && employee && (
-            <div className="space-y-8">
-              <ProfileExtended userId={employee.id} />
-              
-              {/* User Management Form */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-                <div className="p-6 border-b border-gray-200">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                    <Edit className="w-5 h-5 mr-2" />
-                    Gestión de Usuario
-                  </h2>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Edita la información básica y configuración del usuario
-                  </p>
-                </div>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                  <Edit className="w-5 h-5 mr-2" />
+                  Gestión de Usuario
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Edita la información básica y configuración del usuario
+                </p>
+              </div>
 
-                <form onSubmit={handleEditSubmit} className="p-6" autoComplete="off">
-                  {editError && (
-                    <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
-                      {editError}
-                    </div>
-                  )}
-                  
+              <form onSubmit={handleEditSubmit} className="p-6" autoComplete="off">
+                {editError && (
+                  <div className="mb-6 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
+                    {editError}
+                  </div>
+                )}
+                
+                {/* Required Fields Section */}
+                <div className="mb-8">
+                  <h3 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
+                    <span className="text-red-500 mr-2">*</span>
+                    Información Obligatoria
+                  </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <span className="text-red-500 mr-1">*</span>
                         Nombre completo
                       </label>
                       <input
@@ -492,6 +533,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <span className="text-red-500 mr-1">*</span>
                         Correo electrónico
                       </label>
                       <input
@@ -507,9 +549,11 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                     
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <span className="text-red-500 mr-1">*</span>
                         Rol
                       </label>
                       <select
+                        required
                         value={editFormData.role}
                         onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as 'employee' | 'admin' })}
                         className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
@@ -518,98 +562,241 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                         <option value="admin">Administrador</option>
                       </select>
                     </div>
-                   
-                   <div>
-                     <div className="flex items-center justify-between mb-2">
-                       <label className="block text-sm font-medium text-gray-700">
-                         Contraseña
-                       </label>
-                       <button
-                         type="button"
-                         onClick={() => setShowPasswordField(!showPasswordField)}
-                         className="text-xs text-blue-600 hover:text-blue-700"
-                       >
-                         {showPasswordField ? 'Cancelar cambio' : 'Cambiar contraseña'}
-                       </button>
-                     </div>
-                     {showPasswordField && (
-                       <input
-                         type="password"
-                         value={newPassword}
-                         onChange={(e) => setNewPassword(e.target.value)}
-                         className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                         placeholder="Nueva contraseña (mínimo 6 caracteres)"
-                         minLength={6}
-                         autoComplete="new-password"
-                       />
-                     )}
-                   </div>
                   </div>
-                  
-                  <div className="mt-6 pt-4 border-t border-gray-200">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <span className="text-sm font-medium text-gray-700">Estado del usuario:</span>
-                        <button
-                          type="button"
-                          onClick={() => setEditFormData({ ...editFormData, active: !editFormData.active })}
-                          className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
-                            editFormData.active
-                              ? 'bg-green-100 text-green-800 border-2 border-green-300 hover:bg-green-200'
-                              : 'bg-red-100 text-red-800 border-2 border-red-300 hover:bg-red-200'
-                          }`}
-                        >
-                          <div className={`w-3 h-3 rounded-full mr-2 ${
-                            editFormData.active ? 'bg-green-500' : 'bg-red-500'
-                          }`} />
-                          {editFormData.active ? 'ACTIVO' : 'INACTIVO'}
-                        </button>
+                </div>
+
+                {/* Optional Fields Section */}
+                <div className="mb-8">
+                  <h3 className="text-md font-semibold text-gray-900 mb-4">
+                    Información Opcional
+                  </h3>
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Profile Image Section */}
+                    <div className="lg:col-span-1">
+                      <div className="text-center">
+                        <div className="relative inline-block">
+                          {imagePreview ? (
+                            <img
+                              src={imagePreview}
+                              alt="Profile"
+                              className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                              onError={handleImageError}
+                            />
+                          ) : (
+                            <div className="w-32 h-32 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center">
+                              <User className="w-12 h-12 text-gray-400" />
+                            </div>
+                          )}
+                          <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer hover:bg-blue-600 transition-colors">
+                            <Camera className="w-4 h-4 text-white" />
+                          </div>
+                        </div>
+                        
+                        <div className="mt-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            URL de la imagen
+                          </label>
+                          <input
+                            type="url"
+                            value={profile.profile_image_url || ''}
+                            onChange={(e) => updateProfile('profile_image_url', e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="https://ejemplo.com/imagen.jpg"
+                          />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Pega la URL de tu foto de perfil
+                          </p>
+                        </div>
                       </div>
-                      
-                      <div className="flex space-x-3">
-                        <Button
-                          type="button"
-                          variant="danger"
-                          size="sm"
-                          onClick={() => {
-                            if (window.confirm(`¿Estás seguro de que quieres ${editFormData.active ? 'desactivar' : 'activar'} a ${employee.full_name}?`)) {
-                              toggleUserStatus()
-                            }
-                          }}
-                        >
-                          {editFormData.active ? 'Desactivar' : 'Activar'}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="danger"
-                          size="sm"
-                          onClick={() => {
-                            if (window.confirm(`¿Estás seguro de que quieres eliminar permanentemente a ${employee.full_name}? Esta acción no se puede deshacer.`)) {
-                              deleteUser()
-                            }
-                          }}
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Eliminar
-                        </Button>
-                        <button
-                          type="submit"
-                          onClick={(e) => {
-                            e.preventDefault()
-                            if (window.confirm(`¿Confirmas que quieres guardar los cambios para ${employee.full_name}?`)) {
-                              handleEditSubmit(e as any)
-                            }
-                          }}
-                          className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
-                        >
-                          <Save className="w-4 h-4 mr-2" />
-                          Guardar Cambios
-                        </button>
+                    </div>
+
+                    {/* Profile Information */}
+                    <div className="lg:col-span-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Phone className="w-4 h-4 inline mr-2" />
+                            Teléfono
+                          </label>
+                          <input
+                            type="tel"
+                            value={profile.phone || ''}
+                            onChange={(e) => updateProfile('phone', e.target.value)}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Building className="w-4 h-4 inline mr-2" />
+                            Departamento
+                          </label>
+                          <input
+                            type="text"
+                            value={profile.department || ''}
+                            onChange={(e) => updateProfile('department', e.target.value)}
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Ej: Desarrollo, Marketing, Ventas"
+                          />
+                        </div>
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Briefcase className="w-4 h-4 inline mr-2" />
+                            Puesto
+                          </label>
+                          <input
+                            type="text"
+                            value={profile.position || ''}
+                            onChange={(e) => updateProfile('position', e.target.value)}
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Ej: Desarrollador Senior, Gerente de Ventas"
+                          />
+                        </div>
+                            placeholder="+34 600 000 000"
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <Calendar className="w-4 h-4 inline mr-2" />
+                            Fecha de Contratación
+                          </label>
+                          <input
+                            type="date"
+                            value={profile.hire_date || ''}
+                            onChange={(e) => updateProfile('hire_date', e.target.value)}
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        </div>
+                          />
+                        <div className="md:col-span-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <label className="block text-sm font-medium text-gray-700">
+                              Contraseña
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setShowPasswordField(!showPasswordField)}
+                              className="text-xs text-blue-600 hover:text-blue-700"
+                            >
+                              {showPasswordField ? 'Cancelar cambio' : 'Cambiar contraseña'}
+                            </button>
+                          </div>
+                          {showPasswordField && (
+                            <input
+                              type="password"
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Nueva contraseña (mínimo 6 caracteres)"
+                              minLength={6}
+                              autoComplete="new-password"
+                            />
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </form>
-              </div>
+                </div>
+                        </div>
+                {/* Additional Information */}
+                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
+                  <h3 className="text-sm font-medium text-gray-900 mb-3">
+                    Información Adicional
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p className="text-gray-600">Tiempo en la empresa:</p>
+                      <p className="font-semibold">
+                        {profile.hire_date ? (
+                          (() => {
+                            const hireDate = new Date(profile.hire_date)
+                            const now = new Date()
+                            const diffTime = Math.abs(now.getTime() - hireDate.getTime())
+                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+                            const years = Math.floor(diffDays / 365)
+                            const months = Math.floor((diffDays % 365) / 30)
+                            
+                            if (years > 0) {
+                              return `${years} año${years > 1 ? 's' : ''} ${months > 0 ? `y ${months} mes${months > 1 ? 'es' : ''}` : ''}`
+                            } else if (months > 0) {
+                              return `${months} mes${months > 1 ? 'es' : ''}`
+                            } else {
+                              return `${diffDays} día${diffDays > 1 ? 's' : ''}`
+                            }
+                          })()
+                        ) : 'No especificado'}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-gray-600">Estado del perfil:</p>
+                      <p className="font-semibold text-green-600">
+                        {Object.values(profile).filter(v => v && v.toString().trim()).length > 2 
+                          ? 'Completo' 
+                          : 'Incompleto'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-6 border-t border-gray-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm font-medium text-gray-700">Estado del usuario:</span>
+                      <button
+                        type="button"
+                        onClick={() => setEditFormData({ ...editFormData, active: !editFormData.active })}
+                        className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold transition-all duration-200 ${
+                          editFormData.active
+                            ? 'bg-green-100 text-green-800 border-2 border-green-300 hover:bg-green-200'
+                            : 'bg-red-100 text-red-800 border-2 border-red-300 hover:bg-red-200'
+                        }`}
+                      >
+                        <div className={`w-3 h-3 rounded-full mr-2 ${
+                          editFormData.active ? 'bg-green-500' : 'bg-red-500'
+                        }`} />
+                        {editFormData.active ? 'ACTIVO' : 'INACTIVO'}
+                      </button>
+                    </div>
+                    
+                    <div className="flex space-x-3">
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`¿Estás seguro de que quieres ${editFormData.active ? 'desactivar' : 'activar'} a ${employee.full_name}?`)) {
+                            toggleUserStatus()
+                          }
+                        }}
+                      >
+                        {editFormData.active ? 'Desactivar' : 'Activar'}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="danger"
+                        size="sm"
+                        onClick={() => {
+                          if (window.confirm(`¿Estás seguro de que quieres eliminar permanentemente a ${employee.full_name}? Esta acción no se puede deshacer.`)) {
+                            deleteUser()
+                          }
+                        }}
+                      >
+                        <Trash2 className="w-4 h-4 mr-1" />
+                        Eliminar
+                      </Button>
+                      <button
+                        type="submit"
+                        onClick={(e) => {
+                          e.preventDefault()
+                          if (window.confirm(`¿Confirmas que quieres guardar los cambios para ${employee.full_name}?`)) {
+                            handleEditSubmit(e as any)
+                          }
+                        }}
+                        className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
+                      >
+                        <Save className="w-4 h-4 mr-2" />
+                        Guardar Cambios
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </form>
             </div>
           )}
           
