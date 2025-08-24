@@ -399,34 +399,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         }
         rightContent={
           <div className="flex items-center space-x-2">
-            {/* Profile Image Upload */}
-            <div className="flex items-center space-x-2">
-              <input
-                type="url"
-                value={profile.profile_image_url?.startsWith('data:') ? '' : (profile.profile_image_url || '')}
-                onChange={(e) => updateProfile('profile_image_url', e.target.value)}
-                className="w-48 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="URL de imagen de perfil"
-              />
-              <div className="relative">
-                <input
-                  type="file"
-                  id="profile-image-upload-header"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-                <label
-                  htmlFor="profile-image-upload-header"
-                  className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 cursor-pointer transition-colors"
-                >
-                  <Camera className="w-4 h-4 mr-1" />
-                  Subir
-                </label>
-              </div>
-            </div>
-            
-            {/* Action Buttons */}
+            {/* Empty space for future actions if needed */}
           </div>
         }
       />
