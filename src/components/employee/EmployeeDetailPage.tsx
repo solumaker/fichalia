@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Clock, DollarSign, BarChart3, Phone, Building, Briefcase, Camera } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Clock, DollarSign, BarChart3, Phone, Building, Briefcase, Camera, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
 import type { UserProfileExtended } from '../../types/shift-management.types'
@@ -508,231 +508,191 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                   </div>
                 )}
                 
-                {/* Required Fields Section */}
-                <div className="mb-8">
-                  <h3 className="text-md font-semibold text-gray-900 mb-4 flex items-center">
-                    <span className="text-red-500 mr-2">*</span>
-                    Información Obligatoria
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <span className="text-red-500 mr-1">*</span>
-                        Nombre completo
-                      </label>
-                      <input
-                        type="text"
-                        required
-                        value={editFormData.full_name}
-                        onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
-                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Ingresa el nombre completo"
-                        autoComplete="name"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <span className="text-red-500 mr-1">*</span>
-                        Correo electrónico
-                      </label>
-                      <input
-                        type="email"
-                        required
-                        value={editFormData.email}
-                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
-                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="correo@empresa.com"
-                        autoComplete="email"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        <span className="text-red-500 mr-1">*</span>
-                        Rol
-                      </label>
-                      <select
-                        required
-                        value={editFormData.role}
-                        onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as 'employee' | 'admin' })}
-                        className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      >
-                        <option value="employee">Empleado</option>
-                        <option value="admin">Administrador</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Optional Fields Section */}
-                <div className="mb-8">
-                  <h3 className="text-md font-semibold text-gray-900 mb-4">
-                    Información Opcional
-                  </h3>
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Profile Image Section */}
-                    <div className="lg:col-span-1">
-                      <div className="text-center">
-                        <div className="relative inline-block">
-                          {imagePreview ? (
-                            <img
-                              src={imagePreview}
-                              alt="Profile"
-                              className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-                              onError={handleImageError}
-                            />
-                          ) : (
-                            <div className="w-32 h-32 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center">
-                              <User className="w-12 h-12 text-gray-400" />
-                            </div>
-                          )}
-                          <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer hover:bg-blue-600 transition-colors">
-                            <Camera className="w-4 h-4 text-white" />
-                          </div>
-                        </div>
-                        
-                        <div className="mt-4">
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            URL de la imagen
-                          </label>
-                          <input
-                            type="url"
-                            value={profile.profile_image_url || ''}
-                            onChange={(e) => updateProfile('profile_image_url', e.target.value)}
-                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="https://ejemplo.com/imagen.jpg"
+                {/* Professional Form Layout */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                  {/* Profile Image Section - Left Column */}
+                  <div className="lg:col-span-1">
+                    <div className="text-center">
+                      <div className="relative inline-block">
+                        {imagePreview ? (
+                          <img
+                            src={imagePreview}
+                            alt="Profile"
+                            className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                            onError={handleImageError}
                           />
-                          <p className="text-xs text-gray-500 mt-1">
-                            Pega la URL de tu foto de perfil
-                          </p>
+                        ) : (
+                          <div className="w-32 h-32 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center">
+                            <User className="w-12 h-12 text-gray-400" />
+                          </div>
+                        )}
+                        <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer hover:bg-blue-600 transition-colors">
+                          <Camera className="w-4 h-4 text-white" />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Profile Information */}
-                    <div className="lg:col-span-2">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Phone className="w-4 h-4 inline mr-2" />
-                            Teléfono
-                          </label>
-                          <input
-                            type="tel"
-                            value={profile.phone || ''}
-                            onChange={(e) => updateProfile('phone', e.target.value)}
-                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="+34 600 000 000"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Building className="w-4 h-4 inline mr-2" />
-                            Departamento
-                          </label>
-                          <input
-                            type="text"
-                            value={profile.department || ''}
-                            onChange={(e) => updateProfile('department', e.target.value)}
-                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Ej: Desarrollo, Marketing, Ventas"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Briefcase className="w-4 h-4 inline mr-2" />
-                            Puesto
-                          </label>
-                          <input
-                            type="text"
-                            value={profile.position || ''}
-                            onChange={(e) => updateProfile('position', e.target.value)}
-                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Ej: Desarrollador Senior, Gerente de Ventas"
-                          />
-                        </div>
-                        
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            <Calendar className="w-4 h-4 inline mr-2" />
-                            Fecha de Contratación
-                          </label>
-                          <input
-                            type="date"
-                            value={profile.hire_date || ''}
-                            onChange={(e) => updateProfile('hire_date', e.target.value)}
-                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          />
-                        </div>
-                        <div className="md:col-span-2">
-                          <div className="flex items-center justify-between mb-2">
-                            <label className="block text-sm font-medium text-gray-700">
-                              Contraseña
-                            </label>
-                            <button
-                              type="button"
-                              onClick={() => setShowPasswordField(!showPasswordField)}
-                              className="text-xs text-blue-600 hover:text-blue-700"
-                            >
-                              {showPasswordField ? 'Cancelar cambio' : 'Cambiar contraseña'}
-                            </button>
-                          </div>
-                          {showPasswordField && (
-                            <input
-                              type="password"
-                              value={newPassword}
-                              onChange={(e) => setNewPassword(e.target.value)}
-                              className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                              placeholder="Nueva contraseña (mínimo 6 caracteres)"
-                              minLength={6}
-                              autoComplete="new-password"
-                            />
-                          )}
-                        </div>
+                      
+                      <div className="mt-4">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          URL de la imagen
+                        </label>
+                        <input
+                          type="url"
+                          value={profile.profile_image_url || ''}
+                          onChange={(e) => updateProfile('profile_image_url', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="https://ejemplo.com/imagen.jpg"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Pega la URL de tu foto de perfil
+                        </p>
                       </div>
                     </div>
                   </div>
-                </div>
-                {/* Additional Information */}
-                <div className="mb-8 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-sm font-medium text-gray-900 mb-3">
-                    Información Adicional
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p className="text-gray-600">Tiempo en la empresa:</p>
-                      <p className="font-semibold">
-                        {profile.hire_date ? (
-                          (() => {
-                            const hireDate = new Date(profile.hire_date)
-                            const now = new Date()
-                            const diffTime = Math.abs(now.getTime() - hireDate.getTime())
-                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-                            const years = Math.floor(diffDays / 365)
-                            const months = Math.floor((diffDays % 365) / 30)
-                            
-                            if (years > 0) {
-                              return `${years} año${years > 1 ? 's' : ''} ${months > 0 ? `y ${months} mes${months > 1 ? 'es' : ''}` : ''}`
-                            } else if (months > 0) {
-                              return `${months} mes${months > 1 ? 'es' : ''}`
-                            } else {
-                              return `${diffDays} día${diffDays > 1 ? 's' : ''}`
-                            }
-                          })()
-                        ) : 'No especificado'}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-gray-600">Estado del perfil:</p>
-                      <p className="font-semibold text-green-600">
-                        {Object.values(profile).filter(v => v && v.toString().trim()).length > 2 
-                          ? 'Completo' 
-                          : 'Incompleto'
-                        }
-                      </p>
+
+                  {/* Form Fields - Two Columns */}
+                  <div className="lg:col-span-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Required Fields */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="text-red-500 mr-1">*</span>
+                          Nombre completo
+                        </label>
+                        <input
+                          type="text"
+                          required
+                          value={editFormData.full_name}
+                          onChange={(e) => setEditFormData({ ...editFormData, full_name: e.target.value })}
+                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Ingresa el nombre completo"
+                          autoComplete="name"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="text-red-500 mr-1">*</span>
+                          Correo electrónico
+                        </label>
+                        <input
+                          type="email"
+                          required
+                          value={editFormData.email}
+                          onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="correo@empresa.com"
+                          autoComplete="email"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <span className="text-red-500 mr-1">*</span>
+                          Rol
+                        </label>
+                        <select
+                          required
+                          value={editFormData.role}
+                          onChange={(e) => setEditFormData({ ...editFormData, role: e.target.value as 'employee' | 'admin' })}
+                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="employee">Empleado</option>
+                          <option value="admin">Administrador</option>
+                        </select>
+                      </div>
+
+                      {/* Optional Fields */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Phone className="w-4 h-4 inline mr-2" />
+                          Teléfono
+                        </label>
+                        <input
+                          type="tel"
+                          value={profile.phone || ''}
+                          onChange={(e) => updateProfile('phone', e.target.value)}
+                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="+34 600 000 000"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Building className="w-4 h-4 inline mr-2" />
+                          Departamento
+                        </label>
+                        <input
+                          type="text"
+                          value={profile.department || ''}
+                          onChange={(e) => updateProfile('department', e.target.value)}
+                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Ej: Desarrollo, Marketing, Ventas"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Briefcase className="w-4 h-4 inline mr-2" />
+                          Puesto
+                        </label>
+                        <input
+                          type="text"
+                          value={profile.position || ''}
+                          onChange={(e) => updateProfile('position', e.target.value)}
+                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Ej: Desarrollador Senior, Gerente de Ventas"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          <Calendar className="w-4 h-4 inline mr-2" />
+                          Fecha de Contratación
+                        </label>
+                        <input
+                          type="date"
+                          value={profile.hire_date || ''}
+                          onChange={(e) => updateProfile('hire_date', e.target.value)}
+                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </div>
+
+                      {/* Password Change Button */}
+                      <div className="md:col-span-2">
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Contraseña
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswordField(!showPasswordField)}
+                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                          >
+                            {showPasswordField ? (
+                              <>
+                                <X className="w-4 h-4 mr-1" />
+                                Cancelar
+                              </>
+                            ) : (
+                              <>
+                                <Edit className="w-4 h-4 mr-1" />
+                                Cambiar contraseña
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        {showPasswordField && (
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Nueva contraseña (mínimo 6 caracteres)"
+                            minLength={6}
+                            autoComplete="new-password"
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
