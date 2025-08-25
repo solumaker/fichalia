@@ -35,7 +35,7 @@ interface ShiftSchedulerProps {
 }
 
 type ViewMode = 'weekly' | 'monthly'
-type TabMode = 'shifts' | 'patterns' | 'history'
+type TabMode = 'shifts' | 'history'
 
 const DAYS_OF_WEEK = [
   { key: 'monday', label: 'Lunes', index: 1 },
@@ -548,7 +548,6 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
         <nav className="flex space-x-8 px-6" aria-label="Tabs">
           {[
             { id: 'shifts' as const, label: `Turnos ${viewMode === 'weekly' ? 'Semanales' : 'Mensuales'}`, icon: Calendar },
-            { id: 'patterns' as const, label: 'Patrones', icon: Copy },
             { id: 'history' as const, label: 'Historial', icon: Clock }
           ].map((tab) => {
             const Icon = tab.icon
@@ -636,66 +635,6 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           </div>
         )}
 
-        {activeTab === 'patterns' && (
-          <div className="space-y-6">
-            <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium text-gray-900">Patrones de Turno</h3>
-              <Button size="sm" onClick={openCreatePatternModal}>
-                <Plus className="w-4 h-4 mr-2" />
-                Crear Patrón
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {shiftPatterns.map(pattern => (
-                <div key={pattern.id} className="border border-gray-200 rounded-lg p-4">
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <h4 className="font-medium text-gray-900">{pattern.name}</h4>
-                      <p className="text-sm text-gray-500">{formatHours(pattern.totalHours)} semanales</p>
-                    </div>
-                    <div className="flex space-x-1">
-                      <button className="p-1 text-gray-400 hover:text-blue-600">
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button 
-                        onClick={() => deletePattern(pattern.id)}
-                        className="p-1 text-gray-400 hover:text-red-600"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-1 mb-3">
-                    {pattern.shifts.map((shift, index) => (
-                      <div key={index} className="flex justify-between text-xs">
-                        <span className="text-gray-600">{DAYS_OF_WEEK[index].label}</span>
-                        <span className={shift.isActive ? 'text-gray-900' : 'text-gray-400'}>
-                          {shift.isActive && shift.timeSlots.length > 0 
-                            ? shift.timeSlots.map(slot => `${slot.startTime}-${slot.endTime}`).join(', ')
-                            : 'Descanso'
-                          }
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                  
-                  <Button 
-                    variant="secondary" 
-                    size="sm" 
-                    className="w-full"
-                    onClick={() => applyPattern(pattern)}
-                  >
-                    Aplicar a {viewMode === 'weekly' ? 'semana' : 'mes'} actual
-                  </Button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {activeTab === 'history' && (
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Historial de Turnos</h3>
             <div className="text-center py-8 text-gray-500">
