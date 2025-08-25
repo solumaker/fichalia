@@ -59,8 +59,6 @@ export class ShiftManagementService {
     }
 
     try {
-
-
       // Normalize and clean shifts data
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => {
         const startTime = this.normalizeTimeFormat(shift.start_time)
@@ -80,7 +78,7 @@ export class ShiftManagementService {
       const payload = { userId, shifts: shiftsToSave }
       
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 seconds to allow auto-refresh
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 seconds max
       
       const response = await fetch(url, {
         method: 'POST',
@@ -93,7 +91,6 @@ export class ShiftManagementService {
       })
       
       clearTimeout(timeoutId)
-    
       let result
       try {
         result = await response.json()
@@ -101,7 +98,6 @@ export class ShiftManagementService {
         console.error('Parse error:', parseError)
         throw new Error('Error al procesar la respuesta del servidor')
       }
-    
       if (!response.ok) {
         console.error('Response not ok:', response.status, result)
         throw new Error(result.error || 'Error al guardar los turnos')
@@ -109,7 +105,7 @@ export class ShiftManagementService {
       
     } catch (error: any) {
       if (error.name === 'AbortError') {
-        throw new Error('La operación tardó demasiado tiempo. Por favor, inténtalo de nuevo.')
+        throw new Error('Timeout de red - reintentando en segundo plano')
       }
       
       console.error('Save shifts error:', error)

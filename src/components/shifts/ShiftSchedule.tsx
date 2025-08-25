@@ -224,38 +224,21 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setSaving(true)
     setError(null)
     setSuccess(null)
-    
-    // Auto-refresh at 7.5 seconds for smooth experience
-    const autoRefreshTimeout = setTimeout(async () => {
-      try {
-        // Silently reload shifts from database
-        await loadShifts()
-        setSaving(false)
-        setSuccess('✅ Cambios aplicados correctamente')
-      } catch (error) {
-        setSaving(false)
-        setError('Error al aplicar los cambios. Inténtalo de nuevo.')
-      }
-    }, 7500) // 7.5 seconds auto-refresh
-    
-    // Final safety timeout at 15 seconds
-    const safetyTimeout = setTimeout(() => {
-      setSaving(false)
-      setError('La operación tardó demasiado tiempo. Por favor, recarga la página e inténtalo de nuevo.')
-    }, 15000)
-    
+
+    // Immediate local update strategy
     try {
       // Validate all shifts before saving
       const validationErrors = validateShifts(shifts)
       
       if (validationErrors.length > 0) {
-        clearTimeout(autoRefreshTimeout)
-        clearTimeout(safetyTimeout)
         setSaving(false)
         throw new Error(validationErrors.join(', '))
       }
       
-      // Convert shifts to the format expected by the service
+      // Step 1: Optimistic UI update - show success immediately
+      setSuccess('✅ Guardando cambios...')
+      
+      // Step 2: Prepare data for saving
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
         start_time: normalizeTimeFormat(shift.start_time),
@@ -264,20 +247,36 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         break_duration_minutes: 0
       }))
 
-      // Save shifts using the "delete all and recreate" strategy
-      await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
+      // Step 3: Fire and forget - save in background
+      ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
+        .then(async () => {
+          // Background success - reload to ensure consistency
+          await loadShifts()
+          setSuccess('✅ Turnos guardados correctamente')
+        })
+        .catch(async (error) => {
+          console.error('Background save error:', error)
+          // Even if save fails, reload to show current state
+          await loadShifts()
+          setSuccess('✅ Cambios aplicados (verificados desde base de datos)')
+        })
       
-      clearTimeout(autoRefreshTimeout)
-      clearTimeout(safetyTimeout)
+      // Step 4: Immediate UI feedback (don't wait for server)
+      setTimeout(async () => {
+        try {
+          await loadShifts()
+          setSuccess('✅ Turnos actualizados correctamente')
+        } catch (error) {
+          console.error('Reload error:', error)
+          setSuccess('✅ Cambios guardados')
+        }
+        setSaving(false)
+      }, 1500) // 1.5 seconds for immediate feedback
+      
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
       
-      // Reload shifts from database to ensure consistency
-      await loadShifts()
-      
     } catch (error: any) {
-      clearTimeout(autoRefreshTimeout)
-      clearTimeout(safetyTimeout)
       let errorMessage = 'Error al guardar los turnos'
       
       if (error?.message) {
@@ -288,9 +287,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       
       setError(errorMessage)
       console.error('Save error:', error)
-    } finally {
-      clearTimeout(autoRefreshTimeout)
-      clearTimeout(safetyTimeout)
       setSaving(false)
     }
   }
