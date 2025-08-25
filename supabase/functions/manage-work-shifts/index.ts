@@ -135,24 +135,23 @@ serve(async (req) => {
         )
       }
       
-      if (shift.start_time === shift.end_time) {
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/
         return new Response(
           JSON.stringify({ error: `Start time and end time cannot be the same for shift ${i + 1}` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+      // Convert HH:MM:SS to HH:MM format for database storage
+      startTime = startTime.length > 5 ? startTime.substring(0, 5) : startTime
+      endTime = endTime.length > 5 ? endTime.substring(0, 5) : endTime
       
-      // Validate time format (HH:MM) - More flexible regex
-      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+      // Validate the cleaned time format (should be HH:MM now)
+      const cleanTimeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
       
-      // Trim whitespace and ensure string format
-      const startTime = String(shift.start_time).trim()
-      const endTime = String(shift.end_time).trim()
-      
-      if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+      if (!cleanTimeRegex.test(startTime) || !cleanTimeRegex.test(endTime)) {
         return new Response(
           JSON.stringify({ 
-            error: `Invalid time format for shift ${i + 1}. Use HH:MM format. Received: start="${startTime}", end="${endTime}"` 
+            error: `Invalid time format for shift ${i + 1}. Expected HH:MM format. Received: start="${shift.start_time}" -> cleaned: "${startTime}", end="${shift.end_time}" -> cleaned: "${endTime}"` 
           }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
