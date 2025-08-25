@@ -93,7 +93,7 @@ export function PatternModal({
   const createDaysFromWeekData = (weekData: any[]): DayPattern[] => {
     // Convert current week shifts to pattern format
     return DAYS_OF_WEEK.map(day => {
-      const dayShift = weekData.find(shift => {
+      const dayShift = weekData?.find(shift => {
         // Match day logic here based on your week data structure
         return false // Placeholder
       })
