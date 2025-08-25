@@ -272,7 +272,7 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
             // Custom range summary
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
-                <p className="text-sm text-gray-600">Total Horas Programadas</p>
+                <p className="text-sm text-gray-600">Horas Programadas</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {ShiftManagementService.formatHours(
                     history.reduce((sum, calc) => sum + calc.scheduled_hours, 0)
@@ -280,7 +280,7 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">Total Horas Trabajadas</p>
+                <p className="text-sm text-gray-600">Horas Trabajadas</p>
                 <p className="text-2xl font-bold text-green-600">
                   {ShiftManagementService.formatHours(
                     history.reduce((sum, calc) => sum + calc.worked_hours, 0)
@@ -288,18 +288,18 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">Total Horas Extra</p>
-                <p className="text-2xl font-bold text-orange-600">
+                <p className="text-sm text-gray-600">Horas Ordinarias</p>
+                <p className="text-2xl font-bold text-blue-600">
                   {ShiftManagementService.formatHours(
-                    history.reduce((sum, calc) => sum + calc.overtime_hours, 0)
+                    history.reduce((sum, calc) => sum + calc.regular_hours, 0)
                   )}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">Total Pagado</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {ShiftManagementService.formatCurrency(
-                    history.reduce((sum, calc) => sum + calc.total_pay, 0)
+                <p className="text-sm text-gray-600">Horas Extra</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {ShiftManagementService.formatHours(
+                    history.reduce((sum, calc) => sum + calc.overtime_hours, 0)
                   )}
                 </p>
               </div>
