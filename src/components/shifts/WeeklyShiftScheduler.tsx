@@ -635,6 +635,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           </div>
         )}
 
+        {activeTab === 'history' && (
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Historial de Turnos</h3>
             <div className="text-center py-8 text-gray-500">
@@ -642,6 +643,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
               <p>Historial de turnos próximamente</p>
             </div>
           </div>
+        )}
         )}
 
         {/* Publish Button */}
