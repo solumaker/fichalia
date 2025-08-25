@@ -225,11 +225,19 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setError(null)
     setSuccess(null)
     
+    // Set a safety timeout to prevent button from hanging indefinitely
+    const safetyTimeout = setTimeout(() => {
+      setSaving(false)
+      setError('La operación tardó demasiado tiempo. Por favor, recarga la página e inténtalo de nuevo.')
+    }, 15000) // 15 seconds safety timeout
+    
     try {
       // Validate all shifts before saving
       const validationErrors = validateShifts(shifts)
       
       if (validationErrors.length > 0) {
+        clearTimeout(safetyTimeout)
+        setSaving(false)
         throw new Error(validationErrors.join(', '))
       }
       
@@ -245,6 +253,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       // Save shifts using the "delete all and recreate" strategy
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       
+      clearTimeout(safetyTimeout)
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
       
@@ -252,6 +261,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       await loadShifts()
       
     } catch (error: any) {
+      clearTimeout(safetyTimeout)
       let errorMessage = 'Error al guardar los turnos'
       
       if (error?.message) {
@@ -263,6 +273,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       setError(errorMessage)
       console.error('Save error:', error)
     } finally {
+      clearTimeout(safetyTimeout)
       setSaving(false)
     }
   }

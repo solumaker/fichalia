@@ -80,7 +80,7 @@ export class ShiftManagementService {
       const payload = { userId, shifts: shiftsToSave }
       
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 30000)
+      const timeoutId = setTimeout(() => controller.abort(), 10000) // Reduced to 10 seconds
       
       const response = await fetch(url, {
         method: 'POST',
@@ -98,10 +98,12 @@ export class ShiftManagementService {
       try {
         result = await response.json()
       } catch (parseError) {
+        console.error('Parse error:', parseError)
         throw new Error('Error al procesar la respuesta del servidor')
       }
     
       if (!response.ok) {
+        console.error('Response not ok:', response.status, result)
         throw new Error(result.error || 'Error al guardar los turnos')
       }
       
@@ -110,6 +112,7 @@ export class ShiftManagementService {
         throw new Error('La operación tardó demasiado tiempo. Por favor, inténtalo de nuevo.')
       }
       
+      console.error('Save shifts error:', error)
       throw error
     }
   }
