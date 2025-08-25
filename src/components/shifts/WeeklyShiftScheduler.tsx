@@ -554,20 +554,6 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           </Button>
         </div>
       </div>
-            </div>
-            <button
-              onClick={() => navigatePeriod('next')}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
-          
-          <Button variant="secondary" size="sm" onClick={goToCurrentPeriod}>
-            Ir a {viewMode === 'weekly' ? 'esta semana' : 'este mes'}
-          </Button>
-        </div>
-      </div>
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-200">
