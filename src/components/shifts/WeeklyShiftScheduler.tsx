@@ -210,7 +210,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
 
   const calculateDailyHours = (shift: DailyShift): number => {
     if (!shift.isActive) return 0
-    return shift.timeSlots.reduce((total, slot) => total + calculateTimeSlotHours(slot), 0)
+    return Array.isArray(shift.timeSlots) ? shift.timeSlots.reduce((total, slot) => total + calculateTimeSlotHours(slot), 0) : 0
   }
 
   const getTotalPeriodHours = (): number => {
@@ -820,7 +820,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
 
               {shift && shift.timeSlots.length > 0 ? (
                 <div className="space-y-2">
-                  {(shift.timeSlots ?? []).map((timeSlot, slotIndex) => (
+                  {Array.isArray(shift.timeSlots) ? shift.timeSlots.map((timeSlot, slotIndex) => (
                     <div key={timeSlot.id} className="bg-blue-50 rounded-lg p-2">
                       <div className="flex items-center justify-between">
                         <div className="text-center flex-1">
@@ -852,7 +852,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : null}
                   
                   <div className="text-center pt-2 border-t border-gray-200">
                     <p className="text-xs font-medium text-gray-700 mb-2">
@@ -938,7 +938,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
                 
                 {isCurrentMonth && shift && shift.timeSlots.length > 0 && (
                   <div className="space-y-1">
-                    {shift.timeSlots.slice(0, 2).map((timeSlot) => (
+                    {Array.isArray(shift.timeSlots) ? shift.timeSlots.slice(0, 2).map((timeSlot) => (
                       <div 
                         key={timeSlot.id}
                         className="bg-blue-100 text-blue-800 px-1 py-0.5 rounded text-xs cursor-pointer hover:bg-blue-200 transition-colors"
@@ -946,8 +946,8 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
                       >
                         {timeSlot.startTime}-{timeSlot.endTime}
                       </div>
-                    ))}
-                    {shift.timeSlots.length > 2 && (
+                    )) : null}
+                    {Array.isArray(shift.timeSlots) && shift.timeSlots.length > 2 && (
                       <div className="text-xs text-gray-500">
                         +{shift.timeSlots.length - 2} más
                       </div>
