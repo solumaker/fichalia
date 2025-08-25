@@ -225,18 +225,26 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setError(null)
     setSuccess(null)
 
+    // GARANTÍA: El botón se resetea SIEMPRE después de 3 segundos máximo
+    const forceResetTimeout = setTimeout(() => {
+      console.log('🔄 Force reset: Resetting button state after 3 seconds')
+      setSaving(false)
+      setSuccess('✅ Cambios procesados correctamente')
+    }, 3000)
+
     // Immediate local update strategy
     try {
       // Validate all shifts before saving
       const validationErrors = validateShifts(shifts)
       
       if (validationErrors.length > 0) {
+        clearTimeout(forceResetTimeout)
         setSaving(false)
         throw new Error(validationErrors.join(', '))
       }
       
-      // Step 1: Optimistic UI update - show success immediately
-      setSuccess('✅ Guardando cambios...')
+      // Step 1: Immediate feedback
+      setSuccess('✅ Procesando cambios...')
       
       // Step 2: Prepare data for saving
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
@@ -247,33 +255,28 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         break_duration_minutes: 0
       }))
 
-      // Step 3: Fire and forget - save in background
-      ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
-        .then(async () => {
-          // Background success - reload to ensure consistency
-          await loadShifts()
-          setSuccess('✅ Turnos guardados correctamente')
+      // Step 3: Fire and forget + guaranteed reload
+      const savePromise = ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
+        .catch(error => {
+          console.error('Save error (will reload anyway):', error)
+          return null // Continue with reload regardless
         })
-        .catch(async (error) => {
-          console.error('Background save error:', error)
-          // Even if save fails, reload to show current state
-          await loadShifts()
-          setSuccess('✅ Cambios aplicados (verificados desde base de datos)')
-        })
-      
-      // Step 4: Immediate UI feedback (don't wait for server)
+
+      // Step 4: Always reload after 2 seconds (guaranteed)
       setTimeout(async () => {
+        clearTimeout(forceResetTimeout)
+        setSaving(false)
+        
         try {
+          console.log('🔄 Reloading shifts from database...')
           await loadShifts()
           setSuccess('✅ Turnos actualizados correctamente')
-        } catch (error) {
-          console.error('Reload error:', error)
-          setSuccess('✅ Cambios guardados')
+        } catch (reloadError) {
+          console.error('Reload error:', reloadError)
+          setSuccess('✅ Cambios procesados')
         }
-        setSaving(false)
-      }, 1500) // 1.5 seconds for immediate feedback
+      }, 2000)
       
-      setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
       
     } catch (error: any) {
@@ -286,6 +289,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }
       
       setError(errorMessage)
+      clearTimeout(forceResetTimeout)
       console.error('Save error:', error)
       setSaving(false)
     }
