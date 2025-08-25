@@ -53,68 +53,56 @@ export class ShiftManagementService {
   }
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
-    console.log('🔄 ShiftManagementService.saveWorkShifts called with:', { userId, shiftsCount: shifts.length })
-    
     // Get current session to authenticate with Edge Function
-    console.log('🔑 Getting current session...')
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     if (sessionError || !session) {
-      console.error('❌ Session error:', sessionError)
       throw new Error('No hay sesión activa')
     }
-    console.log('✅ Session obtained, user:', session.user?.email)
 
     // Call Edge Function to manage work shifts (bypasses RLS)
-    console.log('📡 Calling Edge Function...')
     const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`
-    console.log('🌐 URL:', url)
     
     const payload = { userId, shifts }
-    console.log('📦 Payload:', payload)
     
-    // Add timeout to prevent hanging
+    // Add timeout to prevent hanging - reduced to 15 seconds for faster feedback
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal
-    })
-    
-    clearTimeout(timeoutId)
-    console.log('📨 Response status:', response.status)
-    console.log('📨 Response ok:', response.ok)
-
-    let result
     try {
-      result = await response.json()
-      console.log('📄 Response body:', result)
-    } catch (parseError) {
-      console.error('❌ Failed to parse response JSON:', parseError)
-      throw new Error('Error al procesar la respuesta del servidor')
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+    
+      let result
+      try {
+        result = await response.json()
+      } catch (parseError) {
+        throw new Error('Error al procesar la respuesta del servidor')
+      }
+    
+      if (!response.ok) {
+        throw new Error(result.error || 'Error al guardar los turnos')
+      }
+      
+    } catch (error: any) {
+      clearTimeout(timeoutId)
+      
+      // Handle specific error types
+      if (error.name === 'AbortError') {
+        throw new Error('La operación tardó demasiado tiempo. Por favor, inténtalo de nuevo.')
+      }
+      
+      // Re-throw the error to be handled by the component
+      throw error
     }
-    
-    if (!response.ok) {
-      console.error('❌ Edge Function error:', result)
-      throw new Error(result.error || 'Error al guardar los turnos')
-    }
-    
-    console.log('✅ Shifts saved successfully:', result)
-  } catch (error: any) {
-    console.error('❌ Error in saveWorkShifts:', error)
-    
-    // Handle specific error types
-    if (error.name === 'AbortError') {
-      throw new Error('La operación tardó demasiado tiempo. Por favor, inténtalo de nuevo.')
-    }
-    
-    // Re-throw the error to be handled by the component
-    throw error
   }
 
   static async updateWorkShift(shiftId: string, updates: Partial<WorkShiftInput>): Promise<void> {

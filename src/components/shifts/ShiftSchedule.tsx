@@ -132,16 +132,11 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const handleSave = async () => {
-    console.log('🚀 handleSave started')
     setSaving(true)
     setError(null)
     setSuccess(null)
     
-    const startTime = Date.now()
-    console.log('⏱️ Save operation started at:', new Date().toISOString())
-
     try {
-      console.log('🔍 Validating shifts...')
       // Validate shifts before saving
       const validationErrors = shifts.map((shift, index) => {
         const errors: string[] = []
@@ -167,49 +162,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }).flat()
       
       if (validationErrors.length > 0) {
-        console.error('❌ Validation errors:', validationErrors)
         throw new Error(validationErrors.join(', '))
       }
-      console.log('✅ Validation passed')
-      
-      // Check for overlapping shifts on the same day
-      console.log('🔍 Checking for overlapping shifts...')
-      const shiftsByDay: { [key: number]: typeof shifts } = {}
-      
-      shifts.forEach((shift, index) => {
-        if (!shiftsByDay[shift.day_of_week]) {
-          shiftsByDay[shift.day_of_week] = []
-        }
-        shiftsByDay[shift.day_of_week].push(shift)
-      })
-      
-      // Validate no overlapping times for same day
-      for (const [day, dayShifts] of Object.entries(shiftsByDay)) {
-        if (dayShifts.length > 1) {
-          console.log(`📅 Checking ${dayShifts.length} shifts for day ${day}`)
-          
-          // Sort shifts by start time
-          dayShifts.sort((a, b) => a.start_time.localeCompare(b.start_time))
-          
-          for (let i = 0; i < dayShifts.length - 1; i++) {
-            const currentShift = dayShifts[i]
-            const nextShift = dayShifts[i + 1]
-            
-            // Convert times to minutes for comparison
-            const currentEnd = timeToMinutes(currentShift.end_time)
-            const nextStart = timeToMinutes(nextShift.start_time)
-            
-            if (currentEnd > nextStart) {
-              const dayName = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][parseInt(day)]
-              throw new Error(`Turnos superpuestos detectados para ${dayName}: ${currentShift.start_time}-${currentShift.end_time} y ${nextShift.start_time}-${nextShift.end_time}`)
-            }
-          }
-        }
-      }
-      console.log('✅ No overlapping shifts detected')
       
       // Convert shifts to the format expected by the service
-      console.log('🔄 Converting shifts to service format...')
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
         start_time: shift.start_time,
@@ -217,25 +173,17 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         is_active: true,
         break_duration_minutes: 0
       }))
-      console.log('📋 Shifts to save:', shiftsToSave)
 
-      // Always save shifts - even if empty array (to delete all)
-      console.log('💾 Calling ShiftManagementService.saveWorkShifts...')
+      // Save shifts - this will DELETE ALL existing shifts and CREATE the new ones
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
-      console.log('✅ ShiftManagementService.saveWorkShifts completed')
       
       setSuccess('✅ Turnos guardados correctamente')
-      console.log('🎉 Success message set')
       onSave?.()
-      console.log('📞 onSave callback called')
       
-      // Reload to get the actual IDs from database
-      console.log('🔄 Reloading shifts from database...')
+      // Reload shifts from database to get the actual IDs
       await loadShifts()
-      console.log('✅ Shifts reloaded successfully')
       
     } catch (error: any) {
-      console.error('❌ Error in handleSave:', error)
       // Handle different types of errors
       let errorMessage = 'Error al guardar los turnos'
       
@@ -247,22 +195,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         errorMessage = error.error.message
       }
       
-      console.error('❌ Final error message:', errorMessage)
       setError(errorMessage)
     } finally {
-      const endTime = Date.now()
-      const duration = endTime - startTime
-      console.log('⏱️ Save operation completed in:', duration, 'ms')
-      console.log('🔓 Setting saving to false...')
       setSaving(false)
-      console.log('✅ handleSave completed')
     }
-  }
-  
-  // Helper function to convert time string to minutes
-  const timeToMinutes = (timeStr: string): number => {
-    const [hours, minutes] = timeStr.split(':').map(Number)
-    return hours * 60 + minutes
   }
 
   if (loading) {
