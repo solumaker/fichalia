@@ -54,38 +54,46 @@ export class ShiftManagementService {
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
     try {
-      // First, delete all existing shifts for the user
-      const { error: deleteError } = await supabase
-        .from('work_shifts')
-        .delete()
-        .eq('user_id', userId)
-
-      if (deleteError) {
-        throw new Error(`Error al eliminar turnos existentes: ${deleteError.message}`)
+      console.log('Starting saveWorkShifts for user:', userId)
+      console.log('Shifts to save:', shifts)
+      
+      // Validate input
+      if (!userId) {
+        throw new Error('User ID is required')
+      }
+      
+      if (!Array.isArray(shifts)) {
+        throw new Error('Shifts must be an array')
+      }
+      
+      // Use the edge function for better reliability
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+      if (sessionError || !session) {
+        throw new Error('No hay sesión activa')
       }
 
-      // If no shifts to insert, we're done
-      if (shifts.length === 0) {
-        return
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userId,
+          shifts: shifts
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`)
       }
 
-      // Normalize and prepare shifts for insertion
-      const shiftsToInsert = shifts.map(shift => ({
-        user_id: userId,
-        day_of_week: shift.day_of_week,
-        start_time: this.normalizeTimeFormat(shift.start_time),
-        end_time: this.normalizeTimeFormat(shift.end_time),
-        is_active: shift.is_active !== false,
-        break_duration_minutes: shift.break_duration_minutes || 0
-      }))
-
-      // Insert new shifts
-      const { error: insertError } = await supabase
-        .from('work_shifts')
-        .insert(shiftsToInsert)
-
-      if (insertError) {
-        throw new Error(`Error al insertar nuevos turnos: ${insertError.message}`)
+      const result = await response.json()
+      console.log('Save result:', result)
+      
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save shifts')
       }
 
     } catch (error: any) {

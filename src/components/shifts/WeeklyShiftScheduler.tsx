@@ -346,30 +346,60 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
     setSuccess(`⏳ Publicando horario ${periodType}...`)
     
     try {
-      // Convert daily shifts back to work shifts format
+      // Convert daily shifts back to work shifts format with proper validation
       const workShiftsToSave: WorkShiftInput[] = []
       
-      dailyShifts.forEach(dailyShift => {
-        if (dailyShift.isActive && dailyShift.timeSlots.length > 0) {
-          // Get day of week from date
-          const dayOfWeek = new Date(dailyShift.date).getDay()
+      // Filter and validate daily shifts
+      const validDailyShifts = dailyShifts.filter(shift => 
+        shift && 
+        shift.isActive && 
+        Array.isArray(shift.timeSlots) && 
+        shift.timeSlots.length > 0 &&
+        shift.date
+      )
+      
+      validDailyShifts.forEach(dailyShift => {
+        try {
+          // Get day of week from date with proper error handling
+          const shiftDate = new Date(dailyShift.date)
+          if (isNaN(shiftDate.getTime())) {
+            console.warn('Invalid date for shift:', dailyShift.date)
+            return
+          }
           
-          // For now, we'll save each time slot as a separate work shift
-          // In a more complex system, you might want to handle multiple time slots per day differently
-          dailyShift.timeSlots.forEach(timeSlot => {
+          const dayOfWeek = shiftDate.getDay()
+          
+          // Validate and process time slots
+          const validTimeSlots = dailyShift.timeSlots.filter(slot => 
+            slot && 
+            slot.startTime && 
+            slot.endTime &&
+            slot.startTime !== slot.endTime
+          )
+          
+          validTimeSlots.forEach(timeSlot => {
             workShiftsToSave.push({
               day_of_week: dayOfWeek,
               start_time: timeSlot.startTime,
               end_time: timeSlot.endTime,
               is_active: true,
-              break_duration_minutes: timeSlot.breakMinutes
+              break_duration_minutes: timeSlot.breakMinutes || 0
             })
           })
+        } catch (shiftError) {
+          console.error('Error processing shift:', dailyShift, shiftError)
         }
       })
       
-      // Save to Supabase
-      await ShiftManagementService.saveWorkShifts(userId, workShiftsToSave)
+      console.log('Shifts to save:', workShiftsToSave)
+      
+      // Save to Supabase with timeout protection
+      const savePromise = ShiftManagementService.saveWorkShifts(userId, workShiftsToSave)
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout: La operación tardó demasiado')), 10000)
+      )
+      
+      await Promise.race([savePromise, timeoutPromise])
       
       // Update original shifts to reflect saved state
       setOriginalShifts(JSON.parse(JSON.stringify(dailyShifts)))
@@ -377,7 +407,8 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
       onSave?.()
       
     } catch (err) {
-      setError(`Error al publicar el horario ${periodType}`)
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido'
+      setError(`Error al publicar el horario ${periodType}: ${errorMessage}`)
       console.error('Error publishing schedule:', err)
     } finally {
       setSaving(false)
