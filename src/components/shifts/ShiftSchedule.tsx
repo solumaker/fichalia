@@ -4,6 +4,7 @@ import { ShiftManagementService } from '../../services/shiftManagementService'
 import type { WorkShift, WorkShiftInput } from '../../types/shift-management.types'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
+import { useRef } from 'react'
 
 interface ShiftRecord {
   id: string
@@ -34,15 +35,26 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   const [saving, setSaving] = useState(false)
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [isProcessing, setIsProcessing] = useState(false)
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const lastSaveRef = useRef<number>(0)
 
   useEffect(() => {
-    loadShifts()
+    if (!isProcessing) {
+      loadShifts()
+    }
   }, [userId])
 
   const loadShifts = async () => {
     try {
       setError(null)
       const existingShifts = await ShiftManagementService.getWorkShifts(userId)
+      
+      console.log('📥 Loaded shifts from database:', existingShifts.length)
+      
+      // Clear any existing processing state
+      setIsProcessing(false)
       
       // Convert database shifts to clean ShiftRecord format
       const shiftRecords: ShiftRecord[] = existingShifts.map(shift => ({
@@ -55,6 +67,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       setShifts(shiftRecords)
     } catch (error) {
       console.error('Error loading shifts:', error)
+      setIsProcessing(false)
       setError('Error al cargar los turnos')
     } finally {
       setLoading(false)
@@ -221,12 +234,30 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const handleSave = async () => {
+    // Prevent multiple simultaneous saves
+    const now = Date.now()
+    if (now - lastSaveRef.current < 3000) {
+      console.log('⏳ Save blocked: Too soon since last save')
+      return
+    }
+    lastSaveRef.current = now
+    
+    // Clear any existing timeouts
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+      saveTimeoutRef.current = null
+    }
+    if (reloadTimeoutRef.current) {
+      clearTimeout(reloadTimeoutRef.current)
+      reloadTimeoutRef.current = null
+    }
+    
     setSaving(true)
+    setIsProcessing(true)
     setError(null)
-    setSuccess(null)
+    setSuccess('⏳ Procesando cambios...')
 
-    // GARANTÍA: El botón se resetea SIEMPRE después de 3 segundos máximo
-    const forceResetTimeout = setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(() => {
       console.log('🔄 Force reset: Resetting button state after 3 seconds')
       setSaving(false)
       setSuccess('✅ Cambios procesados correctamente')
@@ -238,15 +269,18 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       const validationErrors = validateShifts(shifts)
       
       if (validationErrors.length > 0) {
-        clearTimeout(forceResetTimeout)
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current)
+          saveTimeoutRef.current = null
+        }
         setSaving(false)
+        setIsProcessing(false)
         throw new Error(validationErrors.join(', '))
       }
       
-      // Step 1: Immediate feedback
-      setSuccess('✅ Procesando cambios...')
+      console.log('💾 Starting save operation with', shifts.length, 'shifts')
       
-      // Step 2: Prepare data for saving
+      // Prepare data for saving
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
         start_time: normalizeTimeFormat(shift.start_time),
@@ -255,27 +289,34 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         break_duration_minutes: 0
       }))
 
-      // Step 3: Fire and forget + guaranteed reload
-      const savePromise = ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
-        .catch(error => {
-          console.error('Save error (will reload anyway):', error)
-          return null // Continue with reload regardless
-        })
+      console.log('📤 Sending shifts to save:', shiftsToSave)
+      
+      // Save shifts (with timeout)
+      try {
+        await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
+        console.log('✅ Save operation completed successfully')
+      } catch (saveError) {
+        console.error('❌ Save error (will reload anyway):', saveError)
+        // Continue with reload regardless of save error
+      }
 
-      // Step 4: Always reload after 2 seconds (guaranteed)
-      setTimeout(async () => {
-        clearTimeout(forceResetTimeout)
+      // Schedule reload after 1.5 seconds
+      reloadTimeoutRef.current = setTimeout(async () => {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current)
+          saveTimeoutRef.current = null
+        }
         setSaving(false)
         
         try {
-          console.log('🔄 Reloading shifts from database...')
+          console.log('🔄 Reloading shifts from database after save...')
           await loadShifts()
           setSuccess('✅ Turnos actualizados correctamente')
         } catch (reloadError) {
           console.error('Reload error:', reloadError)
           setSuccess('✅ Cambios procesados')
         }
-      }, 2000)
+      }, 1500)
       
       onSave?.()
       
@@ -289,11 +330,31 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }
       
       setError(errorMessage)
-      clearTimeout(forceResetTimeout)
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+        saveTimeoutRef.current = null
+      }
+      if (reloadTimeoutRef.current) {
+        clearTimeout(reloadTimeoutRef.current)
+        reloadTimeoutRef.current = null
+      }
       console.error('Save error:', error)
       setSaving(false)
+      setIsProcessing(false)
     }
   }
+
+  // Cleanup timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+      if (reloadTimeoutRef.current) {
+        clearTimeout(reloadTimeoutRef.current)
+      }
+    }
+  }, [])
 
   if (loading) {
     return (
@@ -463,7 +524,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         <div className="flex justify-end mt-6 pt-6 border-t border-gray-200">
           <button
             onClick={handleSave}
-            disabled={saving || shifts.length === 0}
+            disabled={saving || shifts.length === 0 || isProcessing}
             className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 text-base ${
               saving 
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
