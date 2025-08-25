@@ -790,7 +790,6 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           </div>
         </div>
       )}
-    </div>
       {/* Pattern Modal */}
       <PatternModal
         isOpen={showPatternModal}
