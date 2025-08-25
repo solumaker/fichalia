@@ -9,22 +9,27 @@ function validateEnvironmentVariables(): EnvironmentConfig {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
-  console.log('Environment check:', {
-    supabaseUrl: supabaseUrl ? `${supabaseUrl.substring(0, 20)}...` : 'MISSING',
-    supabaseAnonKey: supabaseAnonKey ? `${supabaseAnonKey.substring(0, 20)}...` : 'MISSING'
-  })
-
   if (!supabaseUrl) {
-    console.error('❌ VITE_SUPABASE_URL is missing!')
-    throw new Error('VITE_SUPABASE_URL is required. Please check your .env file and ensure it contains your Supabase project URL. Example: VITE_SUPABASE_URL=https://your-project.supabase.co')
+    const errorMsg = '❌ VITE_SUPABASE_URL is missing! Please create a .env file with your Supabase URL. Example: VITE_SUPABASE_URL=https://your-project.supabase.co'
+    console.error(errorMsg)
+    alert(errorMsg)
+    throw new Error(errorMsg)
   }
 
   if (!supabaseAnonKey) {
-    console.error('❌ VITE_SUPABASE_ANON_KEY is missing!')
-    throw new Error('VITE_SUPABASE_ANON_KEY is required. Please check your .env file and ensure it contains your Supabase anonymous key. You can find this in your Supabase dashboard under Project Settings -> API.')
+    const errorMsg = '❌ VITE_SUPABASE_ANON_KEY is missing! Please add your Supabase anonymous key to the .env file. Find it in your Supabase dashboard under Project Settings -> API.'
+    console.error(errorMsg)
+    alert(errorMsg)
+    throw new Error(errorMsg)
   }
 
-  console.log('✅ Supabase environment variables loaded successfully')
+  // Validate URL format
+  if (!supabaseUrl.includes('supabase.co')) {
+    const errorMsg = '❌ Invalid Supabase URL format. It should look like: https://your-project.supabase.co'
+    console.error(errorMsg)
+    alert(errorMsg)
+    throw new Error(errorMsg)
+  }
 
   return {
     supabaseUrl,

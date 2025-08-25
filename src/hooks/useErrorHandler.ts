@@ -50,7 +50,13 @@ export function useErrorHandler() {
       return error
     }
     if (error && typeof error === 'object') {
-      return error.message || JSON.stringify(error)
+      if (error.message) {
+        return error.message
+      }
+      if (error.error && error.error.message) {
+        return error.error.message
+      }
+      return JSON.stringify(error)
     }
     return 'Unknown error occurred'
   }, [])
