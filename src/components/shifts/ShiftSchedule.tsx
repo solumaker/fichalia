@@ -1,13 +1,21 @@
-import React, { useState, useEffect } from 'react'
-import { Clock, Save, Plus, X } from 'lucide-react'
+import React, { useState, useEffect, useCallback } from 'react'
+import { Clock, Save, Plus, X, ChevronDown, ChevronUp, Check, AlertCircle, Loader2, Minus } from 'lucide-react'
 import { ShiftManagementService } from '../../services/shiftManagementService'
 import type { WorkShift, ShiftValidationError } from '../../types/shift-management.types'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 
 interface TimeSlot {
+  id: string
   start_time: string
   end_time: string
+  isNew?: boolean
+}
+
+interface DaySchedule {
+  day_of_week: number
+  slots: TimeSlot[]
+  expanded: boolean
 }
 
 interface ShiftScheduleProps {
@@ -16,115 +24,188 @@ interface ShiftScheduleProps {
 }
 
 const DAYS_OF_WEEK = [
-  { value: 1, label: 'Lunes' },
-  { value: 2, label: 'Martes' },
-  { value: 3, label: 'Miércoles' },
-  { value: 4, label: 'Jueves' },
-  { value: 5, label: 'Viernes' },
-  { value: 6, label: 'Sábado' },
-  { value: 0, label: 'Domingo' }
+  { value: 1, label: 'Lunes', short: 'L' },
+  { value: 2, label: 'Martes', short: 'M' },
+  { value: 3, label: 'Miércoles', short: 'X' },
+  { value: 4, label: 'Jueves', short: 'J' },
+  { value: 5, label: 'Viernes', short: 'V' },
+  { value: 6, label: 'Sábado', short: 'S' },
+  { value: 0, label: 'Domingo', short: 'D' }
 ]
 
+type SyncStatus = 'idle' | 'saving' | 'saved' | 'error'
+
 export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
-  const [timeSlots, setTimeSlots] = useState<Record<number, TimeSlot>>({})
+  const [daySchedules, setDaySchedules] = useState<DaySchedule[]>([])
   const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [errors, setErrors] = useState<{ [key: number]: ShiftValidationError }>({})
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
+  const [errors, setErrors] = useState<{ [key: string]: ShiftValidationError }>({})
   const [success, setSuccess] = useState<string | null>(null)
+  const [saveTimeout, setSaveTimeout] = useState<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
-    loadTimeSlots()
+    loadSchedules()
   }, [userId])
 
-  const loadTimeSlots = async () => {
+  const loadSchedules = async () => {
     try {
       const existingShifts = await ShiftManagementService.getWorkShifts(userId)
       
-      // Convert shifts to time slots record
-      const slots: Record<number, TimeSlot> = {}
+      // Group shifts by day
+      const scheduleMap = new Map<number, TimeSlot[]>()
+      
       existingShifts.forEach(shift => {
-        slots[shift.day_of_week] = {
+        if (!scheduleMap.has(shift.day_of_week)) {
+          scheduleMap.set(shift.day_of_week, [])
+        }
+        scheduleMap.get(shift.day_of_week)!.push({
+          id: shift.id,
           start_time: shift.start_time,
           end_time: shift.end_time
-        }
+        })
       })
 
-      setTimeSlots(slots)
+      // Create day schedules
+      const schedules: DaySchedule[] = DAYS_OF_WEEK.map(day => ({
+        day_of_week: day.value,
+        slots: scheduleMap.get(day.value) || [],
+        expanded: (scheduleMap.get(day.value) || []).length > 0
+      }))
+
+      setDaySchedules(schedules)
     } catch (error) {
-      console.error('Error loading time slots:', error)
+      console.error('Error loading schedules:', error)
+      setSyncStatus('error')
     } finally {
       setLoading(false)
     }
   }
 
+  const debouncedSave = useCallback(async (schedules: DaySchedule[]) => {
+    if (saveTimeout) {
+      clearTimeout(saveTimeout)
+    }
+
+    const timeout = setTimeout(async () => {
+      setSyncStatus('saving')
+      
+      try {
+        // Convert schedules to shifts format
+        const shiftsToSave = schedules.flatMap(schedule => 
+          schedule.slots.map(slot => ({
+            day_of_week: schedule.day_of_week,
+            start_time: slot.start_time,
+            end_time: slot.end_time,
+            is_active: true,
+            break_duration_minutes: 0
+          }))
+        )
+
+        await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
+        setSyncStatus('saved')
+        onSave?.()
+        
+        // Auto-hide success status after 2 seconds
+        setTimeout(() => {
+          setSyncStatus('idle')
+        }, 2000)
+        
+      } catch (error) {
+        console.error('Error saving shifts:', error)
+        setSyncStatus('error')
+        setTimeout(() => {
+          setSyncStatus('idle')
+        }, 3000)
+      }
+    }, 1500) // 1.5 second debounce
+
+    setSaveTimeout(timeout)
+  }, [userId, onSave, saveTimeout])
+
+  const updateSchedules = (newSchedules: DaySchedule[]) => {
+    setDaySchedules(newSchedules)
+    debouncedSave(newSchedules)
+  }
+
   const addTimeSlot = (dayOfWeek: number) => {
-    const newSlot: TimeSlot = {
-      start_time: '09:00',
-      end_time: '17:00'
-    }
-    
-    setTimeSlots({ ...timeSlots, [dayOfWeek]: newSlot })
-    setSuccess(null)
-  }
-
-  const removeTimeSlot = (dayOfWeek: number) => {
-    const newTimeSlots = { ...timeSlots }
-    delete newTimeSlots[dayOfWeek]
-    setTimeSlots(newTimeSlots)
-    setSuccess(null)
-    
-    // Clear errors for this day
-    const newErrors = { ...errors }
-    delete newErrors[dayOfWeek]
-    setErrors(newErrors)
-  }
-
-  const updateTimeSlot = (dayOfWeek: number, field: keyof TimeSlot, value: string) => {
-    setTimeSlots({
-      ...timeSlots,
-      [dayOfWeek]: {
-        ...timeSlots[dayOfWeek],
-        [field]: value
+    const newSchedules = daySchedules.map(schedule => {
+      if (schedule.day_of_week === dayOfWeek) {
+        const newSlot: TimeSlot = {
+          id: `temp-${Date.now()}`,
+          start_time: '09:00',
+          end_time: '17:00',
+          isNew: true
+        }
+        return {
+          ...schedule,
+          slots: [...schedule.slots, newSlot],
+          expanded: true
+        }
       }
+      return schedule
     })
-    setSuccess(null)
     
-    // Clear errors for this day
-    const newErrors = { ...errors }
-    delete newErrors[dayOfWeek]
-    setErrors(newErrors)
+    updateSchedules(newSchedules)
   }
 
-  const validateTimeSlot = (slot: TimeSlot): ShiftValidationError => {
-    const errors: ShiftValidationError = {}
-
-    if (!slot.start_time) {
-      errors.start_time = 'Hora de inicio requerida'
-    }
-
-    if (!slot.end_time) {
-      errors.end_time = 'Hora de fin requerida'
-    }
-
-    if (slot.start_time && slot.end_time) {
-      if (!ShiftManagementService.validateShiftTime(slot.start_time, slot.end_time)) {
-        errors.end_time = 'La hora de fin debe ser diferente a la de inicio'
+  const removeTimeSlot = (dayOfWeek: number, slotId: string) => {
+    const newSchedules = daySchedules.map(schedule => {
+      if (schedule.day_of_week === dayOfWeek) {
+        return {
+          ...schedule,
+          slots: schedule.slots.filter(slot => slot.id !== slotId)
+        }
       }
-    }
-
-    return errors
+      return schedule
+    })
+    
+    updateSchedules(newSchedules)
   }
 
-  const calculateTotalHours = () => {
-    return Object.values(timeSlots).reduce((total, slot) => {
-      const start = new Date(`2000-01-01T${slot.start_time}:00`)
-      const end = new Date(`2000-01-01T${slot.end_time}:00`)
-      
-      let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-      if (hours < 0) hours += 24 // Handle overnight shifts
-      
-      return total + Math.max(0, hours)
-    }, 0)
+  const updateTimeSlot = (dayOfWeek: number, slotId: string, field: keyof TimeSlot, value: string) => {
+    const newSchedules = daySchedules.map(schedule => {
+      if (schedule.day_of_week === dayOfWeek) {
+        return {
+          ...schedule,
+          slots: schedule.slots.map(slot => 
+            slot.id === slotId 
+              ? { ...slot, [field]: value, isNew: false }
+              : slot
+          )
+        }
+      }
+      return schedule
+    })
+    
+    updateSchedules(newSchedules)
+  }
+
+  const adjustTime = (dayOfWeek: number, slotId: string, field: 'start_time' | 'end_time', increment: number) => {
+    const schedule = daySchedules.find(s => s.day_of_week === dayOfWeek)
+    const slot = schedule?.slots.find(s => s.id === slotId)
+    if (!slot) return
+
+    const currentTime = slot[field]
+    const [hours, minutes] = currentTime.split(':').map(Number)
+    const totalMinutes = hours * 60 + minutes + increment
+    
+    // Ensure time stays within 24-hour format
+    const newTotalMinutes = Math.max(0, Math.min(1439, totalMinutes)) // 0 to 23:59
+    const newHours = Math.floor(newTotalMinutes / 60)
+    const newMinutes = newTotalMinutes % 60
+    
+    const newTime = `${newHours.toString().padStart(2, '0')}:${newMinutes.toString().padStart(2, '0')}`
+    updateTimeSlot(dayOfWeek, slotId, field, newTime)
+  }
+
+  const toggleDayExpansion = (dayOfWeek: number) => {
+    setDaySchedules(schedules => 
+      schedules.map(schedule => 
+        schedule.day_of_week === dayOfWeek 
+          ? { ...schedule, expanded: !schedule.expanded }
+          : schedule
+      )
+    )
   }
 
   const calculateSlotHours = (slot: TimeSlot) => {
@@ -137,60 +218,38 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     return Math.max(0, hours)
   }
 
-  const handleSave = async () => {
-    setSaving(true)
-    setSuccess(null)
-    setErrors({})
+  const calculateTotalHours = () => {
+    return daySchedules.reduce((total, schedule) => {
+      return total + schedule.slots.reduce((dayTotal, slot) => {
+        return dayTotal + calculateSlotHours(slot)
+      }, 0)
+    }, 0)
+  }
 
-    // Validate all time slots
-    const newErrors: { [key: number]: ShiftValidationError } = {}
-    let hasErrors = false
-
-    Object.entries(timeSlots).forEach(([dayOfWeek, slot]) => {
-      const slotErrors = validateTimeSlot(slot)
-      if (Object.keys(slotErrors).length > 0) {
-        newErrors[parseInt(dayOfWeek)] = slotErrors
-        hasErrors = true
-      }
-    })
-
-    setErrors(newErrors)
-
-    if (hasErrors) {
-      setSaving(false)
-      return
-    }
-
-
-    try {
-      // Convert time slots record to shifts format
-      const shiftsToSave = Object.entries(timeSlots).map(([dayOfWeek, slot]) => ({
-        day_of_week: parseInt(dayOfWeek),
-        start_time: slot.start_time,
-        end_time: slot.end_time,
-        is_active: true,
-        break_duration_minutes: 0
-      }))
-
-      await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
-      setSuccess('✅ Turnos guardados correctamente')
-      onSave?.()
-      
-      // Auto-hide success message after 3 seconds
-      setTimeout(() => {
-        setSuccess(null)
-      }, 3000)
-    } catch (error) {
-      console.error('Error saving shifts:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
-      setSuccess(`❌ Error al guardar los turnos: ${errorMessage}`)
-    } finally {
-      setSaving(false)
+  const getSyncStatusIcon = () => {
+    switch (syncStatus) {
+      case 'saving':
+        return <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+      case 'saved':
+        return <Check className="w-4 h-4 text-green-500" />
+      case 'error':
+        return <AlertCircle className="w-4 h-4 text-red-500" />
+      default:
+        return null
     }
   }
 
-  const getAvailableDays = () => {
-    return DAYS_OF_WEEK.filter(day => !timeSlots[day.value])
+  const getSyncStatusText = () => {
+    switch (syncStatus) {
+      case 'saving':
+        return 'Guardando...'
+      case 'saved':
+        return 'Guardado'
+      case 'error':
+        return 'Error al guardar'
+      default:
+        return ''
+    }
   }
 
   if (loading) {
@@ -202,7 +261,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const totalHours = calculateTotalHours()
-  const slotsCount = Object.keys(timeSlots).length
+  const totalSlots = daySchedules.reduce((total, schedule) => total + schedule.slots.length, 0)
+  const activeDays = daySchedules.filter(schedule => schedule.slots.length > 0).length
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -214,16 +274,19 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
               Gestión de Turnos
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Configura un turno para cada día de la semana
+              Configura múltiples franjas horarias por día
             </p>
           </div>
           <div className="text-right">
-            <p className="text-sm text-gray-600">Total de horas</p>
+            <div className="flex items-center space-x-2 mb-1">
+              {getSyncStatusIcon()}
+              <span className="text-sm text-gray-600">{getSyncStatusText()}</span>
+            </div>
             <p className="text-lg font-semibold text-blue-600">
               {ShiftManagementService.formatHours(totalHours)}
             </p>
             <p className="text-xs text-gray-500">
-              {slotsCount} día{slotsCount !== 1 ? 's' : ''}
+              {totalSlots} franja{totalSlots !== 1 ? 's' : ''} • {activeDays} día{activeDays !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -231,185 +294,195 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
       <div className="p-6">
         {success && (
-          <div className={`mb-6 p-4 rounded-lg transition-all duration-300 ${
-            success.includes('✅') 
-              ? 'bg-green-100 border border-green-200 text-green-800' 
-              : 'bg-red-100 border border-red-200 text-red-800'
-          }`}>
+          <div className="mb-6 p-4 bg-green-100 border border-green-200 text-green-800 rounded-lg">
             {success}
           </div>
         )}
 
-        <div className="space-y-4">
-          {/* Add Time Slot Button */}
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium text-gray-700">Turnos por Día</h3>
-            <div className="flex gap-2">
-              {getAvailableDays().slice(0, 3).map(day => (
-                <Button
-                  key={day.value}
-                  onClick={() => addTimeSlot(day.value)}
-                  variant="secondary"
-                  size="sm"
+        <div className="space-y-3">
+          {daySchedules.map((schedule) => {
+            const dayInfo = DAYS_OF_WEEK.find(d => d.value === schedule.day_of_week)!
+            const dayHours = schedule.slots.reduce((total, slot) => total + calculateSlotHours(slot), 0)
+            
+            return (
+              <div key={schedule.day_of_week} className="border border-gray-200 rounded-lg">
+                {/* Day Header */}
+                <div 
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-50 transition-colors"
+                  onClick={() => toggleDayExpansion(schedule.day_of_week)}
                 >
-                  <Plus className="w-4 h-4 mr-1" />
-                  {day.label}
-                </Button>
-              ))}
-              {getAvailableDays().length > 3 && (
-                <select
-                  onChange={(e) => {
-                    if (e.target.value) {
-                      addTimeSlot(parseInt(e.target.value))
-                      e.target.value = ''
-                    }
-                  }}
-                  className="px-3 py-1 text-sm border border-gray-300 rounded-lg"
-                  defaultValue=""
-                >
-                  <option value="">+ Más días</option>
-                  {getAvailableDays().slice(3).map(day => (
-                    <option key={day.value} value={day.value}>
-                      {day.label}
-                    </option>
-                  ))}
-                </select>
-              )}
-            </div>
-          </div>
+                  <div className="flex items-center space-x-3">
+                    <div className="flex items-center space-x-2">
+                      {schedule.expanded ? (
+                        <ChevronUp className="w-4 h-4 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="w-4 h-4 text-gray-400" />
+                      )}
+                      <span className="font-medium text-gray-900">{dayInfo.label}</span>
+                    </div>
+                    {schedule.slots.length > 0 && (
+                      <span className="text-sm text-gray-500">
+                        {schedule.slots.length} franja{schedule.slots.length !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    {dayHours > 0 && (
+                      <span className="text-sm font-medium text-blue-600">
+                        {ShiftManagementService.formatHours(dayHours)}
+                      </span>
+                    )}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        addTimeSlot(schedule.day_of_week)
+                      }}
+                      className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded transition-colors"
+                      title="Agregar franja"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
 
-          {/* Time Slots List */}
-          {slotsCount === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm mb-4">No hay turnos configurados</p>
-              <Button onClick={() => addTimeSlot(1)} variant="primary" size="sm">
-                <Plus className="w-4 h-4 mr-2" />
-                Agregar Primer Turno
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {Object.entries(timeSlots).map(([dayOfWeek, slot]) => {
-                const dayNum = parseInt(dayOfWeek)
-                const dayLabel = DAYS_OF_WEEK.find(d => d.value === dayNum)?.label || 'Día'
-                const slotErrors = errors[dayNum] || {}
-                const slotHours = calculateSlotHours(slot)
-                
-                return (
-                  <div key={dayOfWeek} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                    <div className="flex items-center gap-4">
-                      {/* Day Label */}
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Día
-                        </label>
-                        <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-700 font-medium">
-                          {dayLabel}
-                        </div>
-                      </div>
-
-                      {/* Start Time */}
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Inicio
-                        </label>
-                        <input
-                          type="time"
-                          value={slot.start_time}
-                          onChange={(e) => updateTimeSlot(dayNum, 'start_time', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            slotErrors.start_time ? 'border-red-300' : 'border-gray-300'
-                          }`}
-                        />
-                        {slotErrors.start_time && (
-                          <p className="text-xs text-red-600 mt-1">{slotErrors.start_time}</p>
-                        )}
-                      </div>
-
-                      {/* End Time */}
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Fin
-                        </label>
-                        <input
-                          type="time"
-                          value={slot.end_time}
-                          onChange={(e) => updateTimeSlot(dayNum, 'end_time', e.target.value)}
-                          className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                            slotErrors.end_time ? 'border-red-300' : 'border-gray-300'
-                          }`}
-                        />
-                        {slotErrors.end_time && (
-                          <p className="text-xs text-red-600 mt-1">{slotErrors.end_time}</p>
-                        )}
-                      </div>
-
-                      {/* Duration Display */}
-                      <div className="text-center min-w-[80px]">
-                        <label className="block text-xs font-medium text-gray-700 mb-1">
-                          Duración
-                        </label>
-                        <div className="text-sm font-semibold text-blue-600 py-2">
-                          {ShiftManagementService.formatHours(slotHours)}
-                        </div>
-                      </div>
-
-                      {/* Remove Button */}
-                      <div className="flex items-end pb-2">
+                {/* Time Slots */}
+                {schedule.expanded && (
+                  <div className="border-t border-gray-200 p-4 space-y-3">
+                    {schedule.slots.length === 0 ? (
+                      <div className="text-center py-4 text-gray-500">
+                        <Clock className="w-6 h-6 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No hay franjas configuradas</p>
                         <button
-                          type="button"
-                          onClick={() => removeTimeSlot(dayNum)}
-                          className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Eliminar turno"
+                          onClick={() => addTimeSlot(schedule.day_of_week)}
+                          className="mt-2 text-blue-600 hover:text-blue-700 text-sm font-medium"
                         >
-                          <X className="w-4 h-4" />
+                          Agregar primera franja
                         </button>
                       </div>
-                    </div>
+                    ) : (
+                      schedule.slots.map((slot, index) => (
+                        <div key={slot.id} className={`flex items-center space-x-3 p-3 rounded-lg border ${
+                          slot.isNew ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'
+                        }`}>
+                          {/* Slot Number */}
+                          <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
+                            {index + 1}
+                          </div>
+
+                          {/* Start Time */}
+                          <div className="flex-1">
+                            <label className="block text-xs text-gray-600 mb-1">Inicio</label>
+                            <div className="flex items-center space-x-1">
+                              <button
+                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'start_time', -15)}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
+                                title="Restar 15 min"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <input
+                                type="time"
+                                value={slot.start_time}
+                                onChange={(e) => updateTimeSlot(schedule.day_of_week, slot.id, 'start_time', e.target.value)}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                              />
+                              <button
+                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'start_time', 15)}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
+                                title="Sumar 15 min"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* End Time */}
+                          <div className="flex-1">
+                            <label className="block text-xs text-gray-600 mb-1">Fin</label>
+                            <div className="flex items-center space-x-1">
+                              <button
+                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'end_time', -15)}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
+                                title="Restar 15 min"
+                              >
+                                <Minus className="w-3 h-3" />
+                              </button>
+                              <input
+                                type="time"
+                                value={slot.end_time}
+                                onChange={(e) => updateTimeSlot(schedule.day_of_week, slot.id, 'end_time', e.target.value)}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                              />
+                              <button
+                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'end_time', 15)}
+                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
+                                title="Sumar 15 min"
+                              >
+                                <Plus className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Duration */}
+                          <div className="text-center min-w-[60px]">
+                            <label className="block text-xs text-gray-600 mb-1">Duración</label>
+                            <div className="text-sm font-medium text-blue-600">
+                              {ShiftManagementService.formatHours(calculateSlotHours(slot))}
+                            </div>
+                          </div>
+
+                          {/* Remove Button */}
+                          <button
+                            onClick={() => removeTimeSlot(schedule.day_of_week, slot.id)}
+                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            title="Eliminar franja"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))
+                    )}
                   </div>
-                )
-              })}
-            </div>
-          )}
+                )}
+              </div>
+            )
+          })}
         </div>
 
         {/* Summary */}
-        {slotsCount > 0 && (
+        {totalSlots > 0 && (
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 className="text-sm font-medium text-blue-900 mb-2">Resumen</h3>
+            <h3 className="text-sm font-medium text-blue-900 mb-3">Resumen Semanal</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-blue-700">Días configurados</p>
-                <p className="font-semibold text-blue-900">{slotsCount}</p>
+                <p className="text-blue-700">Días activos</p>
+                <p className="font-semibold text-blue-900">{activeDays}/7</p>
+              </div>
+              <div>
+                <p className="text-blue-700">Total franjas</p>
+                <p className="font-semibold text-blue-900">{totalSlots}</p>
               </div>
               <div>
                 <p className="text-blue-700">Horas totales</p>
                 <p className="font-semibold text-blue-900">{ShiftManagementService.formatHours(totalHours)}</p>
               </div>
               <div>
-                <p className="text-blue-700">Promedio por día</p>
+                <p className="text-blue-700">Promedio diario</p>
                 <p className="font-semibold text-blue-900">
-                  {slotsCount > 0 ? ShiftManagementService.formatHours(totalHours / slotsCount) : '0h 0m'}
+                  {activeDays > 0 ? ShiftManagementService.formatHours(totalHours / activeDays) : '0h 0m'}
                 </p>
-              </div>
-              <div>
-                <p className="text-blue-700">Días disponibles</p>
-                <p className="font-semibold text-blue-900">{7 - slotsCount}</p>
               </div>
             </div>
           </div>
         )}
 
-        <div className="flex justify-end mt-6">
-          <Button
-            onClick={handleSave}
-            loading={saving}
-            disabled={saving || slotsCount === 0}
-          >
-            <Save className="w-4 h-4 mr-2" />
-            {saving ? 'Guardando...' : 'Guardar Turnos'}
-          </Button>
+        {/* Auto-save Notice */}
+        <div className="mt-4 text-center">
+          <p className="text-xs text-gray-500 flex items-center justify-center space-x-1">
+            {getSyncStatusIcon()}
+            <span>Los cambios se guardan automáticamente</span>
+          </p>
         </div>
       </div>
     </div>
