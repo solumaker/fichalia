@@ -225,17 +225,31 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setError(null)
     setSuccess(null)
     
-    // Set a safety timeout to prevent button from hanging indefinitely
+    // Auto-refresh at 7.5 seconds for smooth experience
+    const autoRefreshTimeout = setTimeout(async () => {
+      try {
+        // Silently reload shifts from database
+        await loadShifts()
+        setSaving(false)
+        setSuccess('✅ Cambios aplicados correctamente')
+      } catch (error) {
+        setSaving(false)
+        setError('Error al aplicar los cambios. Inténtalo de nuevo.')
+      }
+    }, 7500) // 7.5 seconds auto-refresh
+    
+    // Final safety timeout at 15 seconds
     const safetyTimeout = setTimeout(() => {
       setSaving(false)
       setError('La operación tardó demasiado tiempo. Por favor, recarga la página e inténtalo de nuevo.')
-    }, 15000) // 15 seconds safety timeout
+    }, 15000)
     
     try {
       // Validate all shifts before saving
       const validationErrors = validateShifts(shifts)
       
       if (validationErrors.length > 0) {
+        clearTimeout(autoRefreshTimeout)
         clearTimeout(safetyTimeout)
         setSaving(false)
         throw new Error(validationErrors.join(', '))
@@ -253,6 +267,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       // Save shifts using the "delete all and recreate" strategy
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       
+      clearTimeout(autoRefreshTimeout)
       clearTimeout(safetyTimeout)
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
@@ -261,6 +276,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       await loadShifts()
       
     } catch (error: any) {
+      clearTimeout(autoRefreshTimeout)
       clearTimeout(safetyTimeout)
       let errorMessage = 'Error al guardar los turnos'
       
@@ -273,6 +289,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       setError(errorMessage)
       console.error('Save error:', error)
     } finally {
+      clearTimeout(autoRefreshTimeout)
       clearTimeout(safetyTimeout)
       setSaving(false)
     }

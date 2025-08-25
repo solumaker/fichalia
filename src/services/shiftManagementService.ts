@@ -80,7 +80,7 @@ export class ShiftManagementService {
       const payload = { userId, shifts: shiftsToSave }
       
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 10000) // Reduced to 10 seconds
+      const timeoutId = setTimeout(() => controller.abort(), 8000) // 8 seconds to allow auto-refresh
       
       const response = await fetch(url, {
         method: 'POST',
