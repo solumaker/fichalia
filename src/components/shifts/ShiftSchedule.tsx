@@ -4,15 +4,12 @@ import { ShiftManagementService } from '../../services/shiftManagementService'
 import type { WorkShift, WorkShiftInput } from '../../types/shift-management.types'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
-import { useRef } from 'react'
 
 interface ShiftRecord {
   id: string
   day_of_week: number
   start_time: string
   end_time: string
-  isDeleted?: boolean
-  isNew?: boolean
 }
 
 interface ShiftScheduleProps {
@@ -32,21 +29,14 @@ const DAYS_OF_WEEK = [
 
 export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   const [shifts, setShifts] = useState<ShiftRecord[]>([])
+  const [originalShifts, setOriginalShifts] = useState<ShiftRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [hasChanges, setHasChanges] = useState(false)
-  const [originalShifts, setOriginalShifts] = useState<ShiftRecord[]>([])
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const reloadTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const lastSaveRef = useRef<number>(0)
 
   useEffect(() => {
-    if (!isProcessing) {
-      loadShifts()
-    }
+    loadShifts()
   }, [userId])
 
   const loadShifts = async () => {
@@ -54,12 +44,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       setError(null)
       const existingShifts = await ShiftManagementService.getWorkShifts(userId)
       
-      console.log('📥 Loaded shifts from database:', existingShifts.length)
-      
-      // Clear any existing processing state
-      setIsProcessing(false)
-      
-      // Convert database shifts to clean ShiftRecord format
       const shiftRecords: ShiftRecord[] = existingShifts.map(shift => ({
         id: shift.id,
         day_of_week: shift.day_of_week,
@@ -68,63 +52,45 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }))
 
       setShifts(shiftRecords)
-      setOriginalShifts(shiftRecords)
-      setHasChanges(false)
+      setOriginalShifts(JSON.parse(JSON.stringify(shiftRecords))) // Deep copy
     } catch (error) {
       console.error('Error loading shifts:', error)
-      setIsProcessing(false)
       setError('Error al cargar los turnos')
     } finally {
       setLoading(false)
     }
   }
 
-  // Detect changes between current shifts and original shifts
-  const detectChanges = (currentShifts: ShiftRecord[]) => {
-    // Check if lengths are different
-    if (currentShifts.length !== originalShifts.length) {
-      setHasChanges(true)
-      return
-    }
-
-    // Check if any shift has changed
-    const hasChanged = currentShifts.some((shift, index) => {
-      const original = originalShifts[index]
-      return !original || shift.day_of_week !== original.day_of_week || 
-             shift.start_time !== original.start_time || shift.end_time !== original.end_time
-    })
-    setHasChanges(hasChanged)
-  }
-
-  // Normalize time format to HH:MM consistently
   const normalizeTimeFormat = (time: string): string => {
     if (!time) return '09:00'
-    
     const timeStr = String(time).trim()
-    
-    // If it's already HH:MM format, return as is
     if (timeStr.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
       return timeStr
     }
-    
-    // If it's HH:MM:SS format, convert to HH:MM
     if (timeStr.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/)) {
       return timeStr.substring(0, 5)
     }
-    
-    // Default fallback
     return '09:00'
   }
 
-  const addNewShift = () => {
-    // Default to Monday (1) for new shifts
-    let defaultDay = 1
+  const hasChanges = (): boolean => {
+    if (shifts.length !== originalShifts.length) return true
     
-    // If there are existing shifts, use the next available day
+    return shifts.some((shift, index) => {
+      const original = originalShifts[index]
+      return !original || 
+             shift.day_of_week !== original.day_of_week || 
+             shift.start_time !== original.start_time || 
+             shift.end_time !== original.end_time
+    })
+  }
+
+  const addNewShift = () => {
+    let defaultDay = 1
     if (shifts.length > 0) {
       const usedDays = new Set(shifts.map(s => s.day_of_week))
       for (let day = 1; day <= 7; day++) {
-        const dayValue = day === 7 ? 0 : day // Convert 7 to 0 for Sunday
+        const dayValue = day === 7 ? 0 : day
         if (!usedDays.has(dayValue)) {
           defaultDay = dayValue
           break
@@ -136,29 +102,21 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       id: `temp-${Date.now()}-${Math.random()}`,
       day_of_week: defaultDay,
       start_time: '09:00',
-      end_time: '17:00',
-      isNew: true
+      end_time: '17:00'
     }
     
     setShifts(prev => [...prev, newShift])
-    setHasChanges(true)
-    detectChanges([...shifts, newShift])
     setSuccess(null)
     setError(null)
   }
 
   const duplicateShift = (index: number) => {
     const originalShift = shifts[index]
-    
-    // Find next available day
     const usedDays = new Set(shifts.map(s => s.day_of_week))
     let nextDay = (originalShift.day_of_week + 1) % 7
     
-    // Find the next unused day
     for (let i = 0; i < 7; i++) {
-      if (!usedDays.has(nextDay)) {
-        break
-      }
+      if (!usedDays.has(nextDay)) break
       nextDay = (nextDay + 1) % 7
     }
     
@@ -166,13 +124,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       id: `temp-${Date.now()}-${Math.random()}`,
       day_of_week: nextDay,
       start_time: originalShift.start_time,
-      end_time: originalShift.end_time,
-      isNew: true
+      end_time: originalShift.end_time
     }
     
     setShifts(prev => [...prev, duplicatedShift])
-    setHasChanges(true)
-    detectChanges([...shifts, duplicatedShift])
     setSuccess(null)
     setError(null)
   }
@@ -181,26 +136,19 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setShifts(prev => prev.filter((_, i) => i !== index))
     setSuccess(null)
     setError(null)
-    const newShifts = shifts.filter((_, i) => i !== index)
-    detectChanges(newShifts)
-    setError(null)
   }
 
   const updateShift = (index: number, field: keyof ShiftRecord, value: any) => {
     setShifts(prev => prev.map((shift, i) => {
       if (i === index) {
         const updatedShift = { ...shift, [field]: value }
-        
-        // Normalize time fields
         if (field === 'start_time' || field === 'end_time') {
           updatedShift[field] = normalizeTimeFormat(String(value))
         }
-        
         return updatedShift
       }
       return shift
     }))
-    detectChanges(shifts.map((shift, i) => i === index ? { ...shift, [field]: value } : shift))
     setSuccess(null)
     setError(null)
   }
@@ -213,16 +161,13 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       const start = new Date(`2000-01-01T${startTime}:00`)
       const end = new Date(`2000-01-01T${endTime}:00`)
       
-      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-        return 0
-      }
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) return 0
       
       let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-      if (hours < 0) hours += 24 // Handle overnight shifts
+      if (hours < 0) hours += 24
       
       return Math.max(0, hours)
     } catch (error) {
-      console.error('Error calculating hours:', error)
       return 0
     }
   }
@@ -236,8 +181,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     
     shiftsToValidate.forEach((shift, index) => {
       const shiftNumber = index + 1
-      
-      // Validate time format
       const startTime = normalizeTimeFormat(shift.start_time)
       const endTime = normalizeTimeFormat(shift.end_time)
       
@@ -249,12 +192,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         errors.push(`Turno ${shiftNumber}: Formato de hora de fin inválido`)
       }
       
-      // Validate times are different
       if (startTime === endTime) {
         errors.push(`Turno ${shiftNumber}: La hora de inicio y fin no pueden ser iguales`)
       }
       
-      // Validate day of week
       if (shift.day_of_week < 0 || shift.day_of_week > 6) {
         errors.push(`Turno ${shiftNumber}: Día de la semana inválido`)
       }
@@ -264,53 +205,20 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const handleSave = async () => {
-    // Prevent multiple simultaneous saves
-    const now = Date.now()
-    if (now - lastSaveRef.current < 3000) {
-      console.log('⏳ Save blocked: Too soon since last save')
-      return
-    }
-    lastSaveRef.current = now
-    
-    // Clear any existing timeouts
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current)
-      saveTimeoutRef.current = null
-    }
-    if (reloadTimeoutRef.current) {
-      clearTimeout(reloadTimeoutRef.current)
-      reloadTimeoutRef.current = null
-    }
+    if (saving) return
     
     setSaving(true)
-    setIsProcessing(true)
     setError(null)
-    setSuccess('⏳ Procesando cambios...')
+    setSuccess('Guardando cambios...')
 
-    saveTimeoutRef.current = setTimeout(() => {
-      console.log('🔄 Force reset: Resetting button state after 3 seconds')
-      setSaving(false)
-      setSuccess('✅ Cambios procesados correctamente')
-    }, 3000)
-
-    // Immediate local update strategy
     try {
-      // Validate all shifts before saving
+      // Validar turnos
       const validationErrors = validateShifts(shifts)
-      
       if (validationErrors.length > 0) {
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current)
-          saveTimeoutRef.current = null
-        }
-        setSaving(false)
-        setIsProcessing(false)
         throw new Error(validationErrors.join(', '))
       }
-      
-      console.log('💾 Starting save operation with', shifts.length, 'shifts')
-      
-      // Prepare data for saving
+
+      // Preparar datos para guardar
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
         start_time: normalizeTimeFormat(shift.start_time),
@@ -319,75 +227,22 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         break_duration_minutes: 0
       }))
 
-      console.log('📤 Sending shifts to save:', shiftsToSave)
+      // Guardar en Supabase
+      await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       
-      // Save shifts (with timeout)
-      try {
-        await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
-        console.log('✅ Save operation completed successfully')
-      } catch (saveError) {
-        console.error('❌ Save error (will reload anyway):', saveError)
-        // Continue with reload regardless of save error
-      }
-
-      // Schedule reload after 1.5 seconds
-      reloadTimeoutRef.current = setTimeout(async () => {
-        if (saveTimeoutRef.current) {
-          clearTimeout(saveTimeoutRef.current)
-          saveTimeoutRef.current = null
-        }
-        setSaving(false)
-        
-        try {
-          console.log('🔄 Reloading shifts from database after save...')
-          await loadShifts()
-          setSuccess('✅ Turnos actualizados correctamente')
-          setHasChanges(false)
-          setIsProcessing(false)
-        } catch (reloadError) {
-          console.error('Reload error:', reloadError)
-          setSuccess('✅ Cambios procesados')
-        }
-      }, 1500)
+      // Recargar datos para confirmar
+      await loadShifts()
       
+      setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
-      setHasChanges(false)
       
     } catch (error: any) {
-      let errorMessage = 'Error al guardar los turnos'
-      
-      if (error?.message) {
-        errorMessage = error.message
-      } else if (typeof error === 'string') {
-        errorMessage = error
-      }
-      
-      setError(errorMessage)
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-        saveTimeoutRef.current = null
-      }
-      if (reloadTimeoutRef.current) {
-        clearTimeout(reloadTimeoutRef.current)
-        reloadTimeoutRef.current = null
-      }
       console.error('Save error:', error)
+      setError(error?.message || 'Error al guardar los turnos')
+    } finally {
       setSaving(false)
-      setIsProcessing(false)
     }
   }
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      if (saveTimeoutRef.current) {
-        clearTimeout(saveTimeoutRef.current)
-      }
-      if (reloadTimeoutRef.current) {
-        clearTimeout(reloadTimeoutRef.current)
-      }
-    }
-  }, [])
 
   if (loading) {
     return (
@@ -398,6 +253,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const totalHours = getTotalHours()
+  const changesDetected = hasChanges()
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -438,17 +294,12 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
         <div className="space-y-4">
           {shifts.map((shift, index) => {
-            const dayInfo = DAYS_OF_WEEK.find(d => d.value === shift.day_of_week)
             const hours = calculateHours(shift)
             
             return (
               <div 
                 key={shift.id} 
-                className={`p-4 rounded-lg border-2 transition-all ${
-                  shift.isNew 
-                    ? 'border-blue-300 bg-blue-50' 
-                    : 'border-gray-200 bg-gray-50'
-                } hover:shadow-md`}
+                className="p-4 rounded-lg border-2 border-gray-200 bg-gray-50 hover:shadow-md transition-all"
               >
                 <div className="grid grid-cols-12 gap-4 items-center">
                   {/* Day Selector */}
@@ -557,11 +408,13 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         <div className="flex justify-end mt-6 pt-6 border-t border-gray-200">
           <button
             onClick={handleSave}
-            disabled={saving || !hasChanges || isProcessing}
+            disabled={saving || !changesDetected}
             className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 text-base ${
               saving 
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                : changesDetected
+                ? 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
           >
             {saving && (
@@ -572,9 +425,9 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
           </button>
         </div>
         
-        {/* Debug info - remove in production */}
+        {/* Debug info */}
         <div className="text-xs text-gray-500 mt-2">
-          Cambios detectados: {hasChanges ? 'Sí' : 'No'} | Turnos: {shifts.length} | Originales: {originalShifts.length}
+          Cambios detectados: {changesDetected ? 'Sí' : 'No'} | Turnos: {shifts.length} | Originales: {originalShifts.length}
         </div>
       </div>
     </div>
