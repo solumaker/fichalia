@@ -165,19 +165,37 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         break_duration_minutes: 0
       }))
 
-      // This will delete ALL existing shifts and create new ones
-      // This handles: new shifts, modified shifts, and deleted shifts
+      console.log('Saving shifts for user:', userId)
+      console.log('Shifts to save:', shiftsToSave)
+      
+      // Always save shifts - even if empty array (to delete all)
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
+      
+      console.log('Shifts saved successfully')
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
       
       // Reload to get the actual IDs from database
       await loadShifts()
+      console.log('Shifts reloaded successfully')
       
     } catch (error: any) {
       console.error('Error saving shifts:', error)
-      setError(error.message || 'Error al guardar los turnos')
+      
+      // Handle different types of errors
+      let errorMessage = 'Error al guardar los turnos'
+      
+      if (error?.message) {
+        errorMessage = error.message
+      } else if (typeof error === 'string') {
+        errorMessage = error
+      } else if (error?.error?.message) {
+        errorMessage = error.error.message
+      }
+      
+      setError(errorMessage)
     } finally {
+      console.log('Setting saving to false')
       setSaving(false)
     }
   }

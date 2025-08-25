@@ -53,13 +53,26 @@ export class ShiftManagementService {
   }
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
+    console.log('ShiftManagementService.saveWorkShifts called with:', { userId, shiftsCount: shifts.length })
+    
     // Delete existing shifts first
     const { error: deleteError } = await supabase
       .from('work_shifts')
       .delete()
       .eq('user_id', userId)
 
-    if (deleteError) throw deleteError
+    if (deleteError) {
+      console.error('Error deleting existing shifts:', deleteError)
+      throw deleteError
+    }
+    
+    console.log('Existing shifts deleted successfully')
+    
+    // If no shifts to insert, we're done (user deleted all shifts)
+    if (shifts.length === 0) {
+      console.log('No shifts to insert - user deleted all shifts')
+      return
+    }
 
     // Insert new shifts with unique identifiers
     const shiftsToInsert = shifts.map((shift, index) => ({
@@ -71,11 +84,18 @@ export class ShiftManagementService {
       break_duration_minutes: shift.break_duration_minutes || 0
     }))
 
+    console.log('Inserting shifts:', shiftsToInsert)
+    
     const { error } = await supabase
       .from('work_shifts')
       .insert(shiftsToInsert)
 
-    if (error) throw error
+    if (error) {
+      console.error('Error inserting new shifts:', error)
+      throw error
+    }
+    
+    console.log('New shifts inserted successfully')
   }
 
   static async updateWorkShift(shiftId: string, updates: Partial<WorkShiftInput>): Promise<void> {
