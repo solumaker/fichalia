@@ -459,13 +459,12 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-              <Calendar className="w-5 h-5 mr-2" />
-              Gestión de Turnos
-            </h2>
-          </div>
+        {/* First Row: Title and Summary */}
+        <div className="flex items-start justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+            <Calendar className="w-5 h-5 mr-2" />
+            Gestión de Turnos
+          </h2>
           <div className="bg-blue-50 rounded-lg p-4">
             <h3 className="text-sm font-medium text-blue-900 mb-3">
               Resumen {viewMode === 'weekly' ? 'Semanal' : 'Mensual'}
@@ -495,8 +494,9 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           </div>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center justify-center mb-4">
+        {/* Second Row: View Toggle, Period Navigation, and Current Period Button */}
+        <div className="flex items-center justify-between">
+          {/* View Mode Toggle */}
           <div className="bg-gray-100 rounded-lg p-1 flex">
             <button
               onClick={() => switchViewMode('weekly')}
@@ -521,10 +521,8 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
               Vista Mensual
             </button>
           </div>
-        </div>
-
-        {/* Period Navigation */}
-        <div className="flex items-center justify-between">
+          
+          {/* Period Navigation */}
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigatePeriod('prev')}
@@ -542,6 +540,20 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
                   : format(currentPeriod, 'MMMM yyyy', { locale: es })
                 }
               </p>
+            </div>
+            <button
+              onClick={() => navigatePeriod('next')}
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
+          
+          <Button variant="secondary" size="sm" onClick={goToCurrentPeriod}>
+            Ir a {viewMode === 'weekly' ? 'esta semana' : 'este mes'}
+          </Button>
+        </div>
+      </div>
             </div>
             <button
               onClick={() => navigatePeriod('next')}
