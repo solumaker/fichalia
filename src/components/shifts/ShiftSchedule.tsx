@@ -165,23 +165,16 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         break_duration_minutes: 0
       }))
 
-      console.log('Saving shifts for user:', userId)
-      console.log('Shifts to save:', shiftsToSave)
-      
       // Always save shifts - even if empty array (to delete all)
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       
-      console.log('Shifts saved successfully')
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
       
       // Reload to get the actual IDs from database
       await loadShifts()
-      console.log('Shifts reloaded successfully')
       
     } catch (error: any) {
-      console.error('Error saving shifts:', error)
-      
       // Handle different types of errors
       let errorMessage = 'Error al guardar los turnos'
       
@@ -195,7 +188,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       
       setError(errorMessage)
     } finally {
-      console.log('Setting saving to false')
       setSaving(false)
     }
   }

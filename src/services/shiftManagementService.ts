@@ -53,49 +53,29 @@ export class ShiftManagementService {
   }
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
-    console.log('ShiftManagementService.saveWorkShifts called with:', { userId, shiftsCount: shifts.length })
-    
-    // Delete existing shifts first
-    const { error: deleteError } = await supabase
-      .from('work_shifts')
-      .delete()
-      .eq('user_id', userId)
-
-    if (deleteError) {
-      console.error('Error deleting existing shifts:', deleteError)
-      throw deleteError
-    }
-    
-    console.log('Existing shifts deleted successfully')
-    
-    // If no shifts to insert, we're done (user deleted all shifts)
-    if (shifts.length === 0) {
-      console.log('No shifts to insert - user deleted all shifts')
-      return
+    // Get current session to authenticate with Edge Function
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    if (sessionError || !session) {
+      throw new Error('No hay sesión activa')
     }
 
-    // Insert new shifts with unique identifiers
-    const shiftsToInsert = shifts.map((shift, index) => ({
-      user_id: userId,
-      day_of_week: shift.day_of_week,
-      start_time: shift.start_time,
-      end_time: shift.end_time,
-      is_active: shift.is_active,
-      break_duration_minutes: shift.break_duration_minutes || 0
-    }))
+    // Call Edge Function to manage work shifts (bypasses RLS)
+    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        userId,
+        shifts
+      })
+    })
 
-    console.log('Inserting shifts:', shiftsToInsert)
-    
-    const { error } = await supabase
-      .from('work_shifts')
-      .insert(shiftsToInsert)
-
-    if (error) {
-      console.error('Error inserting new shifts:', error)
-      throw error
+    const result = await response.json()
+    if (!response.ok) {
+      throw new Error(result.error || 'Error al guardar los turnos')
     }
-    
-    console.log('New shifts inserted successfully')
   }
 
   static async updateWorkShift(shiftId: string, updates: Partial<WorkShiftInput>): Promise<void> {
