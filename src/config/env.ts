@@ -10,11 +10,11 @@ function validateEnvironmentVariables(): EnvironmentConfig {
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 
   if (!supabaseUrl) {
-    throw new Error('VITE_SUPABASE_URL is required')
+    throw new Error('VITE_SUPABASE_URL is required. Please check your .env file and ensure it contains your Supabase project URL.')
   }
 
   if (!supabaseAnonKey) {
-    throw new Error('VITE_SUPABASE_ANON_KEY is required')
+    throw new Error('VITE_SUPABASE_ANON_KEY is required. Please check your .env file and ensure it contains your Supabase anonymous key.')
   }
 
   return {

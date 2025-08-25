@@ -42,11 +42,24 @@ export function useErrorHandler() {
     }
   }, [clearError, setError])
 
+  const formatError = useCallback((error: any): string => {
+    if (error instanceof Error) {
+      return error.message
+    }
+    if (typeof error === 'string') {
+      return error
+    }
+    if (error && typeof error === 'object') {
+      return error.message || JSON.stringify(error)
+    }
+    return 'Unknown error occurred'
+  }, [])
   return {
     error: errorState.error,
     isError: errorState.isError,
     setError,
     clearError,
-    handleAsync
+    handleAsync,
+    formatError
   }
 }

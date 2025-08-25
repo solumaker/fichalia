@@ -14,7 +14,7 @@ export function useAuth() {
     return await handleAsync(
       () => AuthService.getProfile(userId),
       undefined,
-      (error) => console.error('Error loading profile:', error)
+      (error) => console.error('Error loading profile:', handleAsync.formatError ? handleAsync.formatError(error) : error)
     )
   }
 
