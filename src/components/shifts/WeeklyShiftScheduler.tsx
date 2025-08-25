@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { Calendar, Clock, Plus, Copy, Save, ChevronLeft, ChevronRight, User, AlertCircle, CheckCircle, Trash2, Edit3, RotateCcw, Grid3X3, CalendarDays } from 'lucide-react'
+import { ShiftManagementService } from '../../services/shiftManagementService'
 import { format, addWeeks, addMonths, startOfWeek, endOfWeek, startOfMonth, endOfMonth, addDays, isSameDay, eachDayOfInterval, getWeeksInMonth, startOfWeekYear } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Button } from '../ui/Button'
@@ -87,83 +88,38 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
     setError(null)
     
     try {
-      // Mock data for now - replace with actual API calls later
-      await new Promise(resolve => setTimeout(resolve, 500)) // Simulate API call
+      // Load work shifts from Supabase
+      const workShifts = await ShiftManagementService.getWorkShifts(userId)
       
-      // Mock daily shifts with multiple time slots
-      const mockShifts: DailyShift[] = [
-        {
-          id: '1',
-          date: format(addDays(currentPeriod, 0), 'yyyy-MM-dd'), // Monday
-          timeSlots: [
-            { id: '1-1', startTime: '09:00', endTime: '14:00', breakMinutes: 30 },
-            { id: '1-2', startTime: '15:00', endTime: '18:00', breakMinutes: 0 }
-          ],
-          isActive: true
-        },
-        {
-          id: '2',
-          date: format(addDays(currentPeriod, 1), 'yyyy-MM-dd'), // Tuesday
-          timeSlots: [
-            { id: '2-1', startTime: '09:00', endTime: '17:00', breakMinutes: 60 }
-          ],
-          isActive: true
+      // Convert work shifts to daily shifts format for the current period
+      const periodStart = viewMode === 'weekly' ? currentPeriod : startOfWeek(currentPeriod, { weekStartsOn: 1 })
+      const convertedShifts: DailyShift[] = []
+      
+      DAYS_OF_WEEK.forEach((day, index) => {
+        const dayShifts = workShifts.filter(shift => shift.day_of_week === day.index && shift.is_active)
+        
+        if (dayShifts.length > 0) {
+          const timeSlots: TimeSlot[] = dayShifts.map(shift => ({
+            id: shift.id,
+            startTime: shift.start_time,
+            endTime: shift.end_time,
+            breakMinutes: shift.break_duration_minutes || 0
+          }))
+          
+          convertedShifts.push({
+            id: `day-${day.index}`,
+            date: format(addDays(periodStart, index), 'yyyy-MM-dd'),
+            timeSlots,
+            isActive: true
+          })
         }
-      ]
+      })
       
-      // Mock patterns
-      const mockPatterns: ShiftPattern[] = [
-        {
-          id: '1',
-          name: 'Horario Oficina Estándar',
-          shifts: [
-            { timeSlots: [{ id: 'p1-1', startTime: '09:00', endTime: '17:00', breakMinutes: 60 }], isActive: true },
-            { timeSlots: [{ id: 'p1-2', startTime: '09:00', endTime: '17:00', breakMinutes: 60 }], isActive: true },
-            { timeSlots: [{ id: 'p1-3', startTime: '09:00', endTime: '17:00', breakMinutes: 60 }], isActive: true },
-            { timeSlots: [{ id: 'p1-4', startTime: '09:00', endTime: '17:00', breakMinutes: 60 }], isActive: true },
-            { timeSlots: [{ id: 'p1-5', startTime: '09:00', endTime: '17:00', breakMinutes: 60 }], isActive: true },
-            { timeSlots: [], isActive: false },
-            { timeSlots: [], isActive: false }
-          ],
-          totalHours: 35
-        },
-        {
-          id: '2',
-          name: 'Horario Partido Hostelería',
-          shifts: [
-            { timeSlots: [
-              { id: 'p2-1-1', startTime: '09:00', endTime: '14:00', breakMinutes: 30 },
-              { id: 'p2-1-2', startTime: '19:00', endTime: '23:00', breakMinutes: 0 }
-            ], isActive: true },
-            { timeSlots: [
-              { id: 'p2-2-1', startTime: '09:00', endTime: '14:00', breakMinutes: 30 },
-              { id: 'p2-2-2', startTime: '19:00', endTime: '23:00', breakMinutes: 0 }
-            ], isActive: true },
-            { timeSlots: [], isActive: false },
-            { timeSlots: [
-              { id: 'p2-4-1', startTime: '09:00', endTime: '14:00', breakMinutes: 30 },
-              { id: 'p2-4-2', startTime: '19:00', endTime: '23:00', breakMinutes: 0 }
-            ], isActive: true },
-            { timeSlots: [
-              { id: 'p2-5-1', startTime: '09:00', endTime: '14:00', breakMinutes: 30 },
-              { id: 'p2-5-2', startTime: '19:00', endTime: '23:00', breakMinutes: 0 }
-            ], isActive: true },
-            { timeSlots: [
-              { id: 'p2-6-1', startTime: '12:00', endTime: '16:00', breakMinutes: 0 },
-              { id: 'p2-6-2', startTime: '20:00', endTime: '24:00', breakMinutes: 0 }
-            ], isActive: true },
-            { timeSlots: [
-              { id: 'p2-7-1', startTime: '12:00', endTime: '16:00', breakMinutes: 0 },
-              { id: 'p2-7-2', startTime: '20:00', endTime: '24:00', breakMinutes: 0 }
-            ], isActive: true }
-          ],
-          totalHours: 42
-        }
-      ]
+      setDailyShifts(convertedShifts)
+      setOriginalShifts(JSON.parse(JSON.stringify(convertedShifts)))
       
-      setDailyShifts(mockShifts)
-      setOriginalShifts(JSON.parse(JSON.stringify(mockShifts)))
-      setShiftPatterns(mockPatterns)
+      // For now, keep mock patterns - these could be stored in a separate table later
+      setShiftPatterns([])
       
     } catch (err) {
       setError('Error al cargar los datos de turnos')
@@ -390,15 +346,30 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
     setSuccess(`⏳ Publicando horario ${periodType}...`)
     
     try {
-      // Mock API call - replace with actual implementation
-      await new Promise(resolve => setTimeout(resolve, 1500))
+      // Convert daily shifts back to work shifts format
+      const workShiftsToSave: WorkShiftInput[] = []
       
-      console.log(`Publishing ${periodType} schedule:`, {
-        userId,
-        period: format(currentPeriod, 'yyyy-MM-dd'),
-        shifts: dailyShifts,
-        viewMode
+      dailyShifts.forEach(dailyShift => {
+        if (dailyShift.isActive && dailyShift.timeSlots.length > 0) {
+          // Get day of week from date
+          const dayOfWeek = new Date(dailyShift.date).getDay()
+          
+          // For now, we'll save each time slot as a separate work shift
+          // In a more complex system, you might want to handle multiple time slots per day differently
+          dailyShift.timeSlots.forEach(timeSlot => {
+            workShiftsToSave.push({
+              day_of_week: dayOfWeek,
+              start_time: timeSlot.startTime,
+              end_time: timeSlot.endTime,
+              is_active: true,
+              break_duration_minutes: timeSlot.breakMinutes
+            })
+          })
+        }
       })
+      
+      // Save to Supabase
+      await ShiftManagementService.saveWorkShifts(userId, workShiftsToSave)
       
       // Update original shifts to reflect saved state
       setOriginalShifts(JSON.parse(JSON.stringify(dailyShifts)))

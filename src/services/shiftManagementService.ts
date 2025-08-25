@@ -53,83 +53,42 @@ export class ShiftManagementService {
   }
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
-    if (sessionError || !session) {
-      throw new Error('No hay sesión activa')
-    }
-    
-    console.log('🔧 ShiftManagementService.saveWorkShifts called')
-    console.log('👤 User ID:', userId)
-    console.log('📊 Shifts count:', shifts.length)
-    console.log('📋 Shifts data:', shifts)
-
     try {
-      // Normalize and clean shifts data
-      console.log('🧹 Normalizing shifts data...')
-      const shiftsToSave: WorkShiftInput[] = shifts.map(shift => {
-        const startTime = this.normalizeTimeFormat(shift.start_time)
-        const endTime = this.normalizeTimeFormat(shift.end_time)
-        
-        return {
-          day_of_week: shift.day_of_week,
-          start_time: startTime,
-          end_time: endTime,
-          is_active: shift.is_active !== false,
-          break_duration_minutes: shift.break_duration_minutes || 0
-        }
-      })
-      
-      console.log('✨ Normalized shifts:', shiftsToSave)
+      // First, delete all existing shifts for the user
+      const { error: deleteError } = await supabase
+        .from('work_shifts')
+        .delete()
+        .eq('user_id', userId)
 
-      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`
-      console.log('🌐 Edge function URL:', url)
-      
-      const payload = { userId, shifts: shiftsToSave }
-      console.log('📦 Payload:', payload)
-      
-      // Increase timeout for delete operations
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => {
-        console.log('⏰ Request timeout after 10 seconds')
-        controller.abort()
-      }, 10000) // 10 seconds for delete operations
-      
-      console.log('📡 Sending request to edge function...')
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      })
-      
-      clearTimeout(timeoutId)
-      console.log('📨 Response received:', response.status, response.statusText)
-      
-      let result
-      try {
-        result = await response.json()
-        console.log('📄 Response data:', result)
-      } catch (parseError) {
-        console.error('Parse error:', parseError)
-        throw new Error('Error al procesar la respuesta del servidor')
+      if (deleteError) {
+        throw new Error(`Error al eliminar turnos existentes: ${deleteError.message}`)
       }
-      
-      if (!response.ok) {
-        console.error('Response not ok:', response.status, result)
-        throw new Error(result.error || 'Error al guardar los turnos')
+
+      // If no shifts to insert, we're done
+      if (shifts.length === 0) {
+        return
       }
-      
-      console.log('✅ Edge function completed successfully')
-      
+
+      // Normalize and prepare shifts for insertion
+      const shiftsToInsert = shifts.map(shift => ({
+        user_id: userId,
+        day_of_week: shift.day_of_week,
+        start_time: this.normalizeTimeFormat(shift.start_time),
+        end_time: this.normalizeTimeFormat(shift.end_time),
+        is_active: shift.is_active !== false,
+        break_duration_minutes: shift.break_duration_minutes || 0
+      }))
+
+      // Insert new shifts
+      const { error: insertError } = await supabase
+        .from('work_shifts')
+        .insert(shiftsToInsert)
+
+      if (insertError) {
+        throw new Error(`Error al insertar nuevos turnos: ${insertError.message}`)
+      }
+
     } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('⏰ Request was aborted due to timeout')
-        throw new Error('Timeout de red - reintentando en segundo plano')
-      }
-      
       console.error('Save shifts error:', error)
       throw error
     }

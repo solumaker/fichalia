@@ -66,6 +66,9 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
       setHistory(historyData)
     } catch (error) {
       console.error('Error loading overtime data:', error)
+      // For now, set empty data if there's an error (tables might not exist yet)
+      setCurrentCalculation(null)
+      setHistory([])
     } finally {
       setLoading(false)
     }
