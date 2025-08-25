@@ -463,21 +463,35 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           <div>
             <h2 className="text-lg font-semibold text-gray-900 flex items-center">
               <Calendar className="w-5 h-5 mr-2" />
-              Gestión de Turnos {viewMode === 'weekly' ? 'Semanales' : 'Mensuales'}
+              Gestión de Turnos
             </h2>
-            {userName && (
-              <p className="text-sm text-gray-600 mt-1">
-                Empleado: {userName}
-              </p>
-            )}
           </div>
-          <div className="text-right">
-            <p className="text-lg font-semibold text-blue-600">
-              {formatHours(totalHours)}
-            </p>
-            <p className="text-xs text-gray-500">
-              {dailyShifts.length} día{dailyShifts.length !== 1 ? 's' : ''} con turnos
-            </p>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-blue-900 mb-3">
+              Resumen {viewMode === 'weekly' ? 'Semanal' : 'Mensual'}
+            </h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-blue-700">Días laborables</p>
+                <p className="font-semibold text-blue-900">{dailyShifts.length}</p>
+              </div>
+              <div>
+                <p className="text-blue-700">Horas totales</p>
+                <p className="font-semibold text-blue-900">{formatHours(totalHours)}</p>
+              </div>
+              <div>
+                <p className="text-blue-700">Promedio diario</p>
+                <p className="font-semibold text-blue-900">
+                  {dailyShifts.length > 0 ? formatHours(totalHours / dailyShifts.length) : '0h 0m'}
+                </p>
+              </div>
+              <div>
+                <p className="text-blue-700">Estado</p>
+                <p className={`font-semibold ${changesDetected ? 'text-orange-600' : 'text-green-600'}`}>
+                  {changesDetected ? 'Cambios pendientes' : 'Sincronizado'}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -603,35 +617,6 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
 
             {/* Calendar View */}
             {renderCalendarView()}
-
-            {/* Summary */}
-            <div className="bg-blue-50 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-blue-900 mb-3">
-                Resumen {viewMode === 'weekly' ? 'Semanal' : 'Mensual'}
-              </h3>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                <div>
-                  <p className="text-blue-700">Días laborables</p>
-                  <p className="font-semibold text-blue-900">{dailyShifts.length}</p>
-                </div>
-                <div>
-                  <p className="text-blue-700">Horas totales</p>
-                  <p className="font-semibold text-blue-900">{formatHours(totalHours)}</p>
-                </div>
-                <div>
-                  <p className="text-blue-700">Promedio diario</p>
-                  <p className="font-semibold text-blue-900">
-                    {dailyShifts.length > 0 ? formatHours(totalHours / dailyShifts.length) : '0h 0m'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-blue-700">Estado</p>
-                  <p className={`font-semibold ${changesDetected ? 'text-orange-600' : 'text-green-600'}`}>
-                    {changesDetected ? 'Cambios pendientes' : 'Sincronizado'}
-                  </p>
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
