@@ -57,9 +57,15 @@ export class ShiftManagementService {
     if (sessionError || !session) {
       throw new Error('No hay sesión activa')
     }
+    
+    console.log('🔧 ShiftManagementService.saveWorkShifts called')
+    console.log('👤 User ID:', userId)
+    console.log('📊 Shifts count:', shifts.length)
+    console.log('📋 Shifts data:', shifts)
 
     try {
       // Normalize and clean shifts data
+      console.log('🧹 Normalizing shifts data...')
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => {
         const startTime = this.normalizeTimeFormat(shift.start_time)
         const endTime = this.normalizeTimeFormat(shift.end_time)
@@ -72,14 +78,23 @@ export class ShiftManagementService {
           break_duration_minutes: shift.break_duration_minutes || 0
         }
       })
+      
+      console.log('✨ Normalized shifts:', shiftsToSave)
 
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`
+      console.log('🌐 Edge function URL:', url)
       
       const payload = { userId, shifts: shiftsToSave }
+      console.log('📦 Payload:', payload)
       
+      // Increase timeout for delete operations
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 seconds max
+      const timeoutId = setTimeout(() => {
+        console.log('⏰ Request timeout after 10 seconds')
+        controller.abort()
+      }, 10000) // 10 seconds for delete operations
       
+      console.log('📡 Sending request to edge function...')
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -91,20 +106,27 @@ export class ShiftManagementService {
       })
       
       clearTimeout(timeoutId)
+      console.log('📨 Response received:', response.status, response.statusText)
+      
       let result
       try {
         result = await response.json()
+        console.log('📄 Response data:', result)
       } catch (parseError) {
         console.error('Parse error:', parseError)
         throw new Error('Error al procesar la respuesta del servidor')
       }
+      
       if (!response.ok) {
         console.error('Response not ok:', response.status, result)
         throw new Error(result.error || 'Error al guardar los turnos')
       }
       
+      console.log('✅ Edge function completed successfully')
+      
     } catch (error: any) {
       if (error.name === 'AbortError') {
+        console.log('⏰ Request was aborted due to timeout')
         throw new Error('Timeout de red - reintentando en segundo plano')
       }
       

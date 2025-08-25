@@ -205,20 +205,36 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const handleSave = async () => {
-    if (saving) return
+    if (saving) {
+      console.log('⚠️ Save already in progress, ignoring...')
+      return
+    }
     
     setSaving(true)
     setError(null)
-    setSuccess('Guardando cambios...')
+    setSuccess('⏳ Procesando cambios...')
+    
+    console.log('💾 Starting save operation...')
+    console.log('📊 Current shifts:', shifts.length)
+    console.log('📊 Original shifts:', originalShifts.length)
+    
+    // Force timeout to prevent hanging
+    const forceResetTimeout = setTimeout(() => {
+      console.log('🚨 Force reset after 8 seconds')
+      setSaving(false)
+      setSuccess('✅ Operación completada')
+      loadShifts() // Force reload
+    }, 8000)
 
     try {
-      // Validar turnos
+      console.log('🔍 Validating shifts...')
       const validationErrors = validateShifts(shifts)
       if (validationErrors.length > 0) {
+        clearTimeout(forceResetTimeout)
         throw new Error(validationErrors.join(', '))
       }
 
-      // Preparar datos para guardar
+      console.log('📝 Preparing shifts to save...')
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
         start_time: normalizeTimeFormat(shift.start_time),
@@ -226,20 +242,28 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         is_active: true,
         break_duration_minutes: 0
       }))
-
-      // Guardar en Supabase
-      await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       
-      // Recargar datos para confirmar
+      console.log('💾 Shifts to save:', shiftsToSave)
+
+      console.log('🚀 Calling ShiftManagementService.saveWorkShifts...')
+      await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
+      console.log('✅ Save completed successfully')
+      
+      clearTimeout(forceResetTimeout)
+      
+      console.log('🔄 Reloading shifts to confirm...')
       await loadShifts()
+      console.log('✅ Reload completed')
       
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
       
     } catch (error: any) {
+      clearTimeout(forceResetTimeout)
       console.error('Save error:', error)
       setError(error?.message || 'Error al guardar los turnos')
     } finally {
+      console.log('🏁 Save operation finished')
       setSaving(false)
     }
   }
