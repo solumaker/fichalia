@@ -4,6 +4,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { Header } from '../layout/Header'
 import { PageLayout } from '../layout/PageLayout'
 import { ShiftSchedule } from './ShiftSchedule'
+import { WeeklyShiftScheduler } from './WeeklyShiftScheduler'
 import { SalaryConfigComponent } from './SalaryConfig'
 import { OvertimeReport } from './OvertimeReport'
 import { ProfileExtended } from './ProfileExtended'
@@ -82,7 +83,7 @@ export function ShiftManagementPage({ onBack }: ShiftManagementPageProps) {
           )}
           
           {activeTab === 'shifts' && (
-            <ShiftSchedule userId={user.id} />
+            <WeeklyShiftScheduler userId={user.id} />
           )}
           
           {activeTab === 'salary' && (

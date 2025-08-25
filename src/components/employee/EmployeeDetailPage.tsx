@@ -18,6 +18,7 @@ import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { TimeEntriesHistory } from './TimeEntriesHistory'
 import { ShiftSchedule } from '../shifts/ShiftSchedule'
+import { WeeklyShiftScheduler } from '../shifts/WeeklyShiftScheduler'
 import { SalaryConfigComponent } from '../shifts/SalaryConfig'
 import { OvertimeReport } from '../shifts/OvertimeReport'
 
@@ -813,7 +814,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           )}
           
           {activeTab === 'shifts' && employee && (
-            <ShiftSchedule userId={employee.id} />
+            <WeeklyShiftScheduler userId={employee.id} userName={employee.full_name} />
           )}
           
           {activeTab === 'salary' && employee && (
