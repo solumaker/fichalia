@@ -383,7 +383,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
               start_time: timeSlot.startTime,
               end_time: timeSlot.endTime,
               is_active: true,
-              break_duration_minutes: timeSlot.breakMinutes || 0
+              break_duration_minutes: Number(timeSlot.breakMinutes) || 0
             })
           })
         } catch (shiftError) {
@@ -396,7 +396,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
       // Save to Supabase with timeout protection
       const savePromise = ShiftManagementService.saveWorkShifts(userId, workShiftsToSave)
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout: La operación tardó demasiado')), 10000)
+        setTimeout(() => reject(new Error('Timeout: La operación tardó demasiado')), 15000)
       )
       
       await Promise.race([savePromise, timeoutPromise])
