@@ -154,24 +154,25 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       return
     }
 
-    // Process time slots to handle multiple slots per day
-    // Keep only the last time slot for each day to comply with unique constraint
-    const daySlotMap = new Map<number, TimeSlot>()
-    
-    timeSlots.forEach(slot => {
-      daySlotMap.set(slot.day_of_week, slot)
-    })
-    
-    // Convert processed slots to shifts format
-    const shiftsToSave = Array.from(daySlotMap.values()).map(slot => ({
-      day_of_week: slot.day_of_week,
-      start_time: slot.start_time,
-      end_time: slot.end_time,
-      is_active: true,
-      break_duration_minutes: 0
-    }))
 
     try {
+      // Process time slots to handle multiple slots per day
+      // Keep only the last time slot for each day to comply with unique constraint
+      const daySlotMap = new Map<number, TimeSlot>()
+      
+      timeSlots.forEach(slot => {
+        daySlotMap.set(slot.day_of_week, slot)
+      })
+      
+      // Convert processed slots to shifts format
+      const shiftsToSave = Array.from(daySlotMap.values()).map(slot => ({
+        day_of_week: slot.day_of_week,
+        start_time: slot.start_time,
+        end_time: slot.end_time,
+        is_active: true,
+        break_duration_minutes: 0
+      }))
+
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
@@ -182,7 +183,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }, 3000)
     } catch (error) {
       console.error('Error saving shifts:', error)
-      setSuccess('❌ Error al guardar los turnos. Inténtalo de nuevo.')
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido'
+      setSuccess(`❌ Error al guardar los turnos: ${errorMessage}`)
     } finally {
       setSaving(false)
     }
