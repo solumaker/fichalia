@@ -53,29 +53,52 @@ export class ShiftManagementService {
   }
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
+    console.log('🔄 ShiftManagementService.saveWorkShifts called with:', { userId, shiftsCount: shifts.length })
+    
     // Get current session to authenticate with Edge Function
+    console.log('🔑 Getting current session...')
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     if (sessionError || !session) {
+      console.error('❌ Session error:', sessionError)
       throw new Error('No hay sesión activa')
     }
+    console.log('✅ Session obtained, user:', session.user?.email)
 
     // Call Edge Function to manage work shifts (bypasses RLS)
+    console.log('📡 Calling Edge Function...')
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`
+    console.log('🌐 URL:', url)
+    
+    const payload = { userId, shifts }
+    console.log('📦 Payload:', payload)
+    
     const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        userId,
-        shifts
-      })
+      body: JSON.stringify(payload)
     })
+    
+    console.log('📨 Response status:', response.status)
+    console.log('📨 Response ok:', response.ok)
 
-    const result = await response.json()
+    let result
+    try {
+      result = await response.json()
+      console.log('📄 Response body:', result)
+    } catch (parseError) {
+      console.error('❌ Failed to parse response JSON:', parseError)
+      throw new Error('Error al procesar la respuesta del servidor')
+    }
+    
     if (!response.ok) {
+      console.error('❌ Edge Function error:', result)
       throw new Error(result.error || 'Error al guardar los turnos')
     }
+    
+    console.log('✅ Shifts saved successfully:', result)
   }
 
   static async updateWorkShift(shiftId: string, updates: Partial<WorkShiftInput>): Promise<void> {
