@@ -59,16 +59,57 @@ export class ShiftManagementService {
       throw new Error('No hay sesión activa')
     }
 
-    // Call Edge Function to manage work shifts (bypasses RLS)
-    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`
-    
-    const payload = { userId, shifts }
-    
-    // Add timeout to prevent hanging - reduced to 15 seconds for faster feedback
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
-    
     try {
+      // Validate shifts before saving
+      const validationErrors = shifts.map((shift, index) => {
+        const errors: string[] = []
+        
+        // Ensure times are strings, trimmed, and convert HH:MM:SS to HH:MM
+        let startTime = String(shift.start_time || '').trim()
+        let endTime = String(shift.end_time || '').trim()
+        
+        // Convert HH:MM:SS to HH:MM if needed
+        startTime = startTime.length > 5 ? startTime.substring(0, 5) : startTime
+        endTime = endTime.length > 5 ? endTime.substring(0, 5) : endTime
+        
+        if (!startTime || !endTime) {
+          errors.push(`Turno ${index + 1}: Horarios requeridos`)
+        }
+        
+        // Validate time format
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+        if (startTime && !timeRegex.test(startTime)) {
+          errors.push(`Turno ${index + 1}: Formato de hora de inicio inválido (original: "${shift.start_time}", limpio: "${startTime}")`)
+        }
+        if (endTime && !timeRegex.test(endTime)) {
+          errors.push(`Turno ${index + 1}: Formato de hora de fin inválido (original: "${shift.end_time}", limpio: "${endTime}")`)
+        }
+        
+        return errors
+      }).flat()
+
+      if (validationErrors.length > 0) {
+        throw new Error(`Errores de validación:\n${validationErrors.join('\n')}`)
+      }
+
+      // Convert shifts to the format expected by the service
+      const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
+        day_of_week: shift.day_of_week,
+        start_time: String(shift.start_time).trim().substring(0, 5), // Ensure HH:MM format
+        end_time: String(shift.end_time).trim().substring(0, 5), // Ensure HH:MM format
+        is_active: true,
+        break_duration_minutes: 0
+      }))
+
+      // Call Edge Function to manage work shifts (bypasses RLS)
+      const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`
+      
+      const payload = { userId, shifts: shiftsToSave }
+      
+      // Add timeout to prevent hanging - reduced to 15 seconds for faster feedback
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+      
       const response = await fetch(url, {
         method: 'POST',
         headers: {
@@ -93,7 +134,6 @@ export class ShiftManagementService {
       }
       
     } catch (error: any) {
-      clearTimeout(timeoutId)
       
       // Handle specific error types
       if (error.name === 'AbortError') {
