@@ -247,15 +247,15 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">Horas Extra</p>
-                <p className="text-2xl font-bold text-orange-600">
-                  {ShiftManagementService.formatHours(currentCalculation.overtime_hours)}
+                <p className="text-sm text-gray-600">Horas Ordinarias</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {ShiftManagementService.formatHours(currentCalculation.regular_hours)}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600">Pago Total</p>
-                <p className="text-2xl font-bold text-purple-600">
-                  {ShiftManagementService.formatCurrency(currentCalculation.total_pay)}
+                <p className="text-sm text-gray-600">Horas Extra</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {ShiftManagementService.formatHours(currentCalculation.overtime_hours)}
                 </p>
               </div>
             </div>
