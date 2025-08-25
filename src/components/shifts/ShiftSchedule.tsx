@@ -137,6 +137,25 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setSuccess(null)
 
     try {
+      // Validate shifts before saving
+      const validationErrors = shifts.map((shift, index) => {
+        const errors: string[] = []
+        
+        if (!shift.start_time || !shift.end_time) {
+          errors.push(`Turno ${index + 1}: Horarios requeridos`)
+        }
+        
+        if (shift.start_time === shift.end_time) {
+          errors.push(`Turno ${index + 1}: Hora inicio y fin no pueden ser iguales`)
+        }
+        
+        return errors
+      }).flat()
+      
+      if (validationErrors.length > 0) {
+        throw new Error(validationErrors.join(', '))
+      }
+      
       // Convert shifts to the format expected by the service
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
@@ -146,6 +165,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         break_duration_minutes: 0
       }))
 
+      // This will delete ALL existing shifts and create new ones
+      // This handles: new shifts, modified shifts, and deleted shifts
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
@@ -158,7 +179,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       setError(error.message || 'Error al guardar los turnos')
     } finally {
       setSaving(false)
-    }
   }
 
   if (loading) {
