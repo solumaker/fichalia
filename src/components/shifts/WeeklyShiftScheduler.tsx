@@ -455,7 +455,8 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
   const changesDetected = hasChanges()
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+    <>
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between mb-4">
@@ -719,7 +720,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           </div>
         )}
       </div>
-
+    </div>
       {/* Time Slot Modal */}
       {showTimeSlotModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
@@ -798,7 +799,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
         editingPattern={editingPattern}
         currentWeekData={dailyShifts}
       />
-
+    </>
   )
 
   function renderWeeklyView() {
