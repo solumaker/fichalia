@@ -200,36 +200,6 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
         </div>
       </div>
 
-      {/* Year Summary */}
-      <div className="grid grid-cols-1 gap-6">
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-            <TrendingUp className="w-5 h-5 mr-2" />
-            Resumen {selectedYear}
-          </h3>
-          <div className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Total Horas Extra:</span>
-              <span className="font-semibold text-orange-600">
-                {ShiftManagementService.formatHours(totalOvertimeThisYear)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Total Ganancias:</span>
-              <span className="font-semibold text-green-600">
-                {ShiftManagementService.formatCurrency(totalEarningsThisYear)}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Promedio Mensual:</span>
-              <span className="font-semibold text-blue-600">
-                {ShiftManagementService.formatCurrency(totalEarningsThisYear / 12)}
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* History Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
