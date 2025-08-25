@@ -11,6 +11,7 @@ interface ShiftRecord {
   day_of_week: number
   start_time: string
   end_time: string
+  isDeleted?: boolean
   isNew?: boolean
 }
 
@@ -33,6 +34,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   const [shifts, setShifts] = useState<ShiftRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [hasChanges, setHasChanges] = useState(false)
+  const [originalShifts, setOriginalShifts] = useState<ShiftRecord[]>([])
   const [success, setSuccess] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -65,6 +68,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }))
 
       setShifts(shiftRecords)
+      setOriginalShifts(shiftRecords)
+      setHasChanges(false)
     } catch (error) {
       console.error('Error loading shifts:', error)
       setIsProcessing(false)
@@ -72,6 +77,23 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     } finally {
       setLoading(false)
     }
+  }
+
+  // Detect changes between current shifts and original shifts
+  const detectChanges = (currentShifts: ShiftRecord[]) => {
+    // Check if lengths are different
+    if (currentShifts.length !== originalShifts.length) {
+      setHasChanges(true)
+      return
+    }
+
+    // Check if any shift has changed
+    const hasChanged = currentShifts.some((shift, index) => {
+      const original = originalShifts[index]
+      return !original || shift.day_of_week !== original.day_of_week || 
+             shift.start_time !== original.start_time || shift.end_time !== original.end_time
+    })
+    setHasChanges(hasChanged)
   }
 
   // Normalize time format to HH:MM consistently
@@ -119,6 +141,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     }
     
     setShifts(prev => [...prev, newShift])
+    setHasChanges(true)
+    detectChanges([...shifts, newShift])
     setSuccess(null)
     setError(null)
   }
@@ -147,6 +171,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     }
     
     setShifts(prev => [...prev, duplicatedShift])
+    setHasChanges(true)
+    detectChanges([...shifts, duplicatedShift])
     setSuccess(null)
     setError(null)
   }
@@ -154,6 +180,9 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   const removeShift = (index: number) => {
     setShifts(prev => prev.filter((_, i) => i !== index))
     setSuccess(null)
+    setError(null)
+    const newShifts = shifts.filter((_, i) => i !== index)
+    detectChanges(newShifts)
     setError(null)
   }
 
@@ -171,6 +200,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }
       return shift
     }))
+    detectChanges(shifts.map((shift, i) => i === index ? { ...shift, [field]: value } : shift))
     setSuccess(null)
     setError(null)
   }
@@ -312,6 +342,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
           console.log('🔄 Reloading shifts from database after save...')
           await loadShifts()
           setSuccess('✅ Turnos actualizados correctamente')
+          setHasChanges(false)
+          setIsProcessing(false)
         } catch (reloadError) {
           console.error('Reload error:', reloadError)
           setSuccess('✅ Cambios procesados')
@@ -319,6 +351,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       }, 1500)
       
       onSave?.()
+      setHasChanges(false)
       
     } catch (error: any) {
       let errorMessage = 'Error al guardar los turnos'
@@ -524,7 +557,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         <div className="flex justify-end mt-6 pt-6 border-t border-gray-200">
           <button
             onClick={handleSave}
-            disabled={saving || shifts.length === 0 || isProcessing}
+            disabled={saving || !hasChanges || isProcessing}
             className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 text-base ${
               saving 
                 ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
@@ -537,6 +570,11 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
             <Save className="w-5 h-5 mr-2" />
             {saving ? 'Guardando...' : 'Guardar Cambios'}
           </button>
+        </div>
+        
+        {/* Debug info - remove in production */}
+        <div className="text-xs text-gray-500 mt-2">
+          Cambios detectados: {hasChanges ? 'Sí' : 'No'} | Turnos: {shifts.length} | Originales: {originalShifts.length}
         </div>
       </div>
     </div>
