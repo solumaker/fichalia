@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { BarChart3, Download, Calendar, RefreshCw, TrendingUp } from 'lucide-react'
+import { BarChart3, Download, Calendar, RefreshCw, TrendingUp, CalendarDays } from 'lucide-react'
 import { ShiftManagementService } from '../../services/shiftManagementService'
 import type { OvertimeCalculation } from '../../types/shift-management.types'
 import { Button } from '../ui/Button'
@@ -17,6 +17,11 @@ const MONTHS = [
 export function OvertimeReport({ userId }: OvertimeReportProps) {
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1)
+  const [dateRange, setDateRange] = useState({
+    start: new Date(new Date().getFullYear(), 0, 1).toISOString().split('T')[0], // Start of current year
+    end: new Date().toISOString().split('T')[0] // Today
+  })
+  const [useCustomRange, setUseCustomRange] = useState(false)
   const [currentCalculation, setCurrentCalculation] = useState<OvertimeCalculation | null>(null)
   const [history, setHistory] = useState<OvertimeCalculation[]>([])
   const [loading, setLoading] = useState(true)
@@ -24,21 +29,40 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
 
   useEffect(() => {
     loadData()
-  }, [userId, selectedYear, selectedMonth])
+  }, [userId, selectedYear, selectedMonth, dateRange, useCustomRange])
 
   const loadData = async () => {
     setLoading(true)
     try {
-      // Load current month calculation
-      const calculation = await ShiftManagementService.getOvertimeCalculation(
-        userId, 
-        selectedYear, 
-        selectedMonth
-      )
-      setCurrentCalculation(calculation)
+      if (!useCustomRange) {
+        // Load current month calculation
+        const calculation = await ShiftManagementService.getOvertimeCalculation(
+          userId, 
+          selectedYear, 
+          selectedMonth
+        )
+        setCurrentCalculation(calculation)
+      } else {
+        setCurrentCalculation(null)
+      }
 
-      // Load history
-      const historyData = await ShiftManagementService.getOvertimeHistory(userId, 12)
+      // Load history - filter by date range if using custom range
+      let historyData = await ShiftManagementService.getOvertimeHistory(userId, 24)
+      
+      if (useCustomRange) {
+        const startYear = new Date(dateRange.start).getFullYear()
+        const startMonth = new Date(dateRange.start).getMonth() + 1
+        const endYear = new Date(dateRange.end).getFullYear()
+        const endMonth = new Date(dateRange.end).getMonth() + 1
+        
+        historyData = historyData.filter(calc => {
+          const calcDate = new Date(calc.year, calc.month - 1)
+          const rangeStart = new Date(startYear, startMonth - 1)
+          const rangeEnd = new Date(endYear, endMonth - 1)
+          return calcDate >= rangeStart && calcDate <= rangeEnd
+        })
+      }
+      
       setHistory(historyData)
     } catch (error) {
       console.error('Error loading overtime data:', error)
@@ -127,24 +151,72 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
               </p>
             </div>
             <div className="flex items-center space-x-3">
-              <select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {MONTHS.map((month, index) => (
-                  <option key={index} value={index + 1}>{month}</option>
-                ))}
-              </select>
-              <select
-                value={selectedYear}
-                onChange={(e) => setSelectedYear(parseInt(e.target.value))}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              >
-                {getYearOptions().map(year => (
-                  <option key={year} value={year}>{year}</option>
-                ))}
-              </select>
+              {/* Date Range Toggle */}
+              <div className="bg-gray-100 rounded-lg p-1 flex">
+                <button
+                  onClick={() => setUseCustomRange(false)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    !useCustomRange
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Mensual
+                </button>
+                <button
+                  onClick={() => setUseCustomRange(true)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    useCustomRange
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-900'
+                  }`}
+                >
+                  Rango Personalizado
+                </button>
+              </div>
+              
+              {!useCustomRange ? (
+                <>
+                  <select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {MONTHS.map((month, index) => (
+                      <option key={index} value={index + 1}>{month}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(parseInt(e.target.value))}
+                    className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    {getYearOptions().map(year => (
+                      <option key={year} value={year}>{year}</option>
+                    ))}
+                  </select>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-center space-x-2">
+                    <CalendarDays className="w-4 h-4 text-gray-500" />
+                    <input
+                      type="date"
+                      value={dateRange.start}
+                      onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                    <span className="text-gray-500">-</span>
+                    <input
+                      type="date"
+                      value={dateRange.end}
+                      onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
+                      className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                  </div>
+                </>
+              )}
+              
               <Button
                 onClick={handleRecalculate}
                 loading={calculating}
@@ -160,7 +232,7 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
 
         {/* Current Month Summary */}
         <div className="p-6">
-          {currentCalculation ? (
+          {!useCustomRange && currentCalculation ? (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div className="text-center">
                 <p className="text-sm text-gray-600">Horas Programadas</p>
@@ -187,7 +259,7 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
                 </p>
               </div>
             </div>
-          ) : (
+          ) : !useCustomRange ? (
             <div className="text-center py-8">
               <Calendar className="w-12 h-12 mx-auto mb-4 text-gray-400" />
               <p className="text-gray-600 mb-4">No hay datos para {MONTHS[selectedMonth - 1]} {selectedYear}</p>
@@ -195,6 +267,42 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
                 <RefreshCw className="w-4 h-4 mr-2" />
                 Calcular Mes
               </Button>
+            </div>
+          ) : (
+            // Custom range summary
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Total Horas Programadas</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {ShiftManagementService.formatHours(
+                    history.reduce((sum, calc) => sum + calc.scheduled_hours, 0)
+                  )}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Total Horas Trabajadas</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {ShiftManagementService.formatHours(
+                    history.reduce((sum, calc) => sum + calc.worked_hours, 0)
+                  )}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Total Horas Extra</p>
+                <p className="text-2xl font-bold text-orange-600">
+                  {ShiftManagementService.formatHours(
+                    history.reduce((sum, calc) => sum + calc.overtime_hours, 0)
+                  )}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-sm text-gray-600">Total Pagado</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {ShiftManagementService.formatCurrency(
+                    history.reduce((sum, calc) => sum + calc.total_pay, 0)
+                  )}
+                </p>
+              </div>
             </div>
           )}
         </div>
