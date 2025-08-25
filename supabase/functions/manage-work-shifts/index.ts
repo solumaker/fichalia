@@ -136,6 +136,18 @@ serve(async (req) => {
       }
       
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9](:[0-5][0-9])?$/
+      
+      if (!timeRegex.test(shift.start_time) || !timeRegex.test(shift.end_time)) {
+        return new Response(
+          JSON.stringify({ error: `Invalid time format for shift ${i + 1}. Expected HH:MM or HH:MM:SS format` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
+      
+      let startTime = shift.start_time
+      let endTime = shift.end_time
+      
+      if (startTime === endTime) {
         return new Response(
           JSON.stringify({ error: `Start time and end time cannot be the same for shift ${i + 1}` }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
