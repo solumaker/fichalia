@@ -4,6 +4,7 @@ import { format, addWeeks, addMonths, startOfWeek, endOfWeek, startOfMonth, endO
 import { es } from 'date-fns/locale'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
+import { PatternModal } from './PatternModal'
 
 // Enhanced types for the new system
 interface TimeSlot {
@@ -66,6 +67,8 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
   const [editingShift, setEditingShift] = useState<DailyShift | null>(null)
   const [editingTimeSlot, setEditingTimeSlot] = useState<TimeSlot | null>(null)
   const [selectedDate, setSelectedDate] = useState<string>('')
+  const [showPatternModal, setShowPatternModal] = useState(false)
+  const [editingPattern, setEditingPattern] = useState<ShiftPattern | null>(null)
 
   // Modal state for time slots
   const [modalTimeSlot, setModalTimeSlot] = useState<TimeSlot>({
@@ -327,6 +330,45 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
     
     setDailyShifts(newShifts)
     setSuccess(`Patrón "${pattern.name}" aplicado`)
+  }
+
+  const openCreatePatternModal = () => {
+    setEditingPattern(null)
+    setShowPatternModal(true)
+  }
+
+  const openEditPatternModal = (pattern: ShiftPattern) => {
+    setEditingPattern(pattern)
+    setShowPatternModal(true)
+  }
+
+  const handlePatternSave = (patternData: Omit<ShiftPattern, 'id' | 'createdAt'>) => {
+    if (editingPattern) {
+      // Update existing pattern
+      const updatedPattern = {
+        ...editingPattern,
+        ...patternData
+      }
+      setShiftPatterns(prev => prev.map(p => p.id === editingPattern.id ? updatedPattern : p))
+      setSuccess(`Patrón "${patternData.name}" actualizado`)
+    } else {
+      // Create new pattern
+      const newPattern: ShiftPattern = {
+        id: `pattern-${Date.now()}`,
+        ...patternData,
+        createdAt: new Date().toISOString()
+      }
+      setShiftPatterns(prev => [...prev, newPattern])
+      setSuccess(`Patrón "${patternData.name}" creado`)
+    }
+    setShowPatternModal(false)
+  }
+
+  const deletePattern = (patternId: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar este patrón?')) {
+      setShiftPatterns(prev => prev.filter(p => p.id !== patternId))
+      setSuccess('Patrón eliminado')
+    }
   }
 
   const copyPreviousPeriod = async () => {
@@ -597,7 +639,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h3 className="text-lg font-medium text-gray-900">Patrones de Turno</h3>
-              <Button size="sm">
+              <Button size="sm" onClick={openCreatePatternModal}>
                 <Plus className="w-4 h-4 mr-2" />
                 Crear Patrón
               </Button>
@@ -615,7 +657,10 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
                       <button className="p-1 text-gray-400 hover:text-blue-600">
                         <Edit3 className="w-4 h-4" />
                       </button>
-                      <button className="p-1 text-gray-400 hover:text-red-600">
+                      <button 
+                        onClick={() => deletePattern(pattern.id)}
+                        className="p-1 text-gray-400 hover:text-red-600"
+                      >
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -745,6 +790,15 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
         </div>
       )}
     </div>
+      {/* Pattern Modal */}
+      <PatternModal
+        isOpen={showPatternModal}
+        onClose={() => setShowPatternModal(false)}
+        onSave={handlePatternSave}
+        editingPattern={editingPattern}
+        currentWeekData={dailyShifts}
+      />
+
   )
 
   function renderWeeklyView() {
