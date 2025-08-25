@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Clock, Save, Plus, X, ChevronDown, ChevronUp, Check, AlertCircle, Loader2, Minus } from 'lucide-react'
 import { ShiftManagementService } from '../../services/shiftManagementService'
 import type { WorkShift, ShiftValidationError } from '../../types/shift-management.types'
@@ -198,6 +198,89 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     updateTimeSlot(dayOfWeek, slotId, field, newTime)
   }
 
+  // Ultra-simple time adjustment with visual feedback
+  const quickAdjustTime = (dayOfWeek: number, slotId: string, field: 'start_time' | 'end_time', minutes: number) => {
+    adjustTime(dayOfWeek, slotId, field, minutes)
+  }
+
+  // Quick preset times
+  const setPresetTime = (dayOfWeek: number, slotId: string, field: 'start_time' | 'end_time', time: string) => {
+    updateTimeSlot(dayOfWeek, slotId, field, time)
+  }
+
+  // Common time presets
+  const timePresets = {
+    start: ['08:00', '09:00', '10:00', '14:00', '15:00'],
+    end: ['12:00', '13:00', '17:00', '18:00', '19:00', '20:00']
+  }
+
+  // Mouse wheel handler for time inputs
+  const handleTimeWheel = (e: React.WheelEvent, dayOfWeek: number, slotId: string, field: 'start_time' | 'end_time') => {
+    e.preventDefault()
+    const delta = e.deltaY > 0 ? -15 : 15 // Scroll down = decrease, scroll up = increase
+    quickAdjustTime(dayOfWeek, slotId, field, delta)
+  }
+
+  // Touch handlers for mobile swipe
+  const handleTouchStart = (e: React.TouchEvent) => {
+    const touch = e.touches[0]
+    e.currentTarget.setAttribute('data-start-y', touch.clientY.toString())
+  }
+
+  const handleTouchMove = (e: React.TouchEvent, dayOfWeek: number, slotId: string, field: 'start_time' | 'end_time') => {
+    e.preventDefault()
+    const touch = e.touches[0]
+    const startY = parseFloat(e.currentTarget.getAttribute('data-start-y') || '0')
+    const deltaY = startY - touch.clientY
+    
+    if (Math.abs(deltaY) > 20) { // Minimum swipe distance
+      const minutes = deltaY > 0 ? 15 : -15
+      quickAdjustTime(dayOfWeek, slotId, field, minutes)
+      e.currentTarget.setAttribute('data-start-y', touch.clientY.toString())
+    }
+  }
+
+  // Compact time input component
+  const CompactTimeInput = ({ 
+    value, 
+    onChange, 
+    dayOfWeek, 
+    slotId, 
+    field, 
+    presets 
+  }: {
+    value: string
+    onChange: (value: string) => void
+    dayOfWeek: number
+    slotId: string
+    field: 'start_time' | 'end_time'
+    presets: string[]
+  }) => (
+    <div className="relative group">
+      <input
+        type="time"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onWheel={(e) => handleTimeWheel(e, dayOfWeek, slotId, field)}
+        onTouchStart={handleTouchStart}
+        onTouchMove={(e) => handleTouchMove(e, dayOfWeek, slotId, field)}
+        className="w-20 px-2 py-1 text-sm font-mono border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white hover:bg-blue-50 transition-colors cursor-pointer"
+        title="Clic para editar, scroll para ajustar ±15min"
+      />
+      <div className="absolute top-full left-0 mt-1 hidden group-hover:flex bg-white border border-gray-200 rounded shadow-lg z-10 gap-1 p-1">
+        {presets.map(preset => (
+          <button
+            key={preset}
+            onClick={() => setPresetTime(dayOfWeek, slotId, field, preset)}
+            className="px-2 py-1 text-xs bg-gray-100 hover:bg-blue-100 rounded transition-colors"
+          >
+            {preset}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+
   const toggleDayExpansion = (dayOfWeek: number) => {
     setDaySchedules(schedules => 
       schedules.map(schedule => 
@@ -364,7 +447,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                       schedule.slots.map((slot, index) => (
                         <div key={slot.id} className={`flex items-center space-x-3 p-3 rounded-lg border ${
                           slot.isNew ? 'border-blue-200 bg-blue-50' : 'border-gray-200 bg-gray-50'
-                        }`}>
+                        } group hover:shadow-sm transition-all`}>
                           {/* Slot Number */}
                           <div className="flex-shrink-0 w-6 h-6 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-xs font-medium">
                             {index + 1}
@@ -372,62 +455,46 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
                           {/* Start Time */}
                           <div className="flex-1">
-                            <label className="block text-xs text-gray-600 mb-1">Inicio</label>
-                            <div className="flex items-center space-x-1">
-                              <button
-                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'start_time', -15)}
-                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
-                                title="Restar 15 min"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <input
-                                type="time"
+                            <label className="block text-xs text-gray-500 mb-1">Inicio</label>
+                            <div className="flex items-center space-x-2">
+                              <CompactTimeInput
                                 value={slot.start_time}
-                                onChange={(e) => updateTimeSlot(schedule.day_of_week, slot.id, 'start_time', e.target.value)}
-                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                onChange={(value) => updateTimeSlot(schedule.day_of_week, slot.id, 'start_time', value)}
+                                dayOfWeek={schedule.day_of_week}
+                                slotId={slot.id}
+                                field="start_time"
+                                presets={timePresets.start}
                               />
-                              <button
-                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'start_time', 15)}
-                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
-                                title="Sumar 15 min"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
+                              <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => quickAdjustTime(schedule.day_of_week, slot.id, 'start_time', 15)} className="p-0.5 text-gray-400 hover:text-blue-600 text-xs leading-none">▲</button>
+                                <button onClick={() => quickAdjustTime(schedule.day_of_week, slot.id, 'start_time', -15)} className="p-0.5 text-gray-400 hover:text-blue-600 text-xs leading-none">▼</button>
+                              </div>
                             </div>
                           </div>
 
                           {/* End Time */}
                           <div className="flex-1">
-                            <label className="block text-xs text-gray-600 mb-1">Fin</label>
-                            <div className="flex items-center space-x-1">
-                              <button
-                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'end_time', -15)}
-                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
-                                title="Restar 15 min"
-                              >
-                                <Minus className="w-3 h-3" />
-                              </button>
-                              <input
-                                type="time"
+                            <label className="block text-xs text-gray-500 mb-1">Fin</label>
+                            <div className="flex items-center space-x-2">
+                              <CompactTimeInput
                                 value={slot.end_time}
-                                onChange={(e) => updateTimeSlot(schedule.day_of_week, slot.id, 'end_time', e.target.value)}
-                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                onChange={(value) => updateTimeSlot(schedule.day_of_week, slot.id, 'end_time', value)}
+                                dayOfWeek={schedule.day_of_week}
+                                slotId={slot.id}
+                                field="end_time"
+                                presets={timePresets.end}
                               />
-                              <button
-                                onClick={() => adjustTime(schedule.day_of_week, slot.id, 'end_time', 15)}
-                                className="p-1 text-gray-400 hover:text-gray-600 hover:bg-white rounded transition-colors"
-                                title="Sumar 15 min"
-                              >
-                                <Plus className="w-3 h-3" />
-                              </button>
+                              <div className="flex flex-col opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => quickAdjustTime(schedule.day_of_week, slot.id, 'end_time', 15)} className="p-0.5 text-gray-400 hover:text-blue-600 text-xs leading-none">▲</button>
+                                <button onClick={() => quickAdjustTime(schedule.day_of_week, slot.id, 'end_time', -15)} className="p-0.5 text-gray-400 hover:text-blue-600 text-xs leading-none">▼</button>
+                              </div>
                             </div>
                           </div>
 
                           {/* Duration */}
-                          <div className="text-center min-w-[60px]">
-                            <label className="block text-xs text-gray-600 mb-1">Duración</label>
-                            <div className="text-sm font-medium text-blue-600">
+                          <div className="text-center min-w-[50px]">
+                            <label className="block text-xs text-gray-500 mb-1">Horas</label>
+                            <div className="text-sm font-semibold text-blue-600">
                               {ShiftManagementService.formatHours(calculateSlotHours(slot))}
                             </div>
                           </div>
@@ -435,7 +502,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                           {/* Remove Button */}
                           <button
                             onClick={() => removeTimeSlot(schedule.day_of_week, slot.id)}
-                            className="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            className="p-1 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded transition-colors opacity-0 group-hover:opacity-100"
                             title="Eliminar franja"
                           >
                             <X className="w-4 h-4" />
@@ -481,7 +548,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         <div className="mt-4 text-center">
           <p className="text-xs text-gray-500 flex items-center justify-center space-x-1">
             {getSyncStatusIcon()}
-            <span>Los cambios se guardan automáticamente</span>
+            <span>Guardado automático • Scroll en campos de hora para ajustar ±15min</span>
           </p>
         </div>
       </div>
