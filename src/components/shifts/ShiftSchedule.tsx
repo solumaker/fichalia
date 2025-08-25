@@ -60,27 +60,17 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const addNewShift = () => {
-    // Find the next available day of the week
-    const usedDays = new Set(shifts.map(shift => shift.day_of_week))
-    let nextAvailableDay = 1 // Start with Monday
+    // Default to Monday (1) for new shifts
+    let defaultDay = 1
     
-    // Find first available day (1-7, where 1=Monday, 7=Sunday)
-    for (let day = 1; day <= 7; day++) {
-      if (!usedDays.has(day)) {
-        nextAvailableDay = day
-        break
-      }
-    }
-    
-    // If all days are taken, show error and return
-    if (usedDays.size >= 7) {
-      setError('Ya tienes turnos configurados para todos los días de la semana')
-      return
+    // If there are existing shifts, use the same day as the last shift
+    if (shifts.length > 0) {
+      defaultDay = shifts[shifts.length - 1].day_of_week
     }
     
     const newShift: ShiftRecord = {
       id: `temp-${Date.now()}`,
-      day_of_week: nextAvailableDay,
+      day_of_week: defaultDay,
       start_time: '09:00',
       end_time: '17:00',
       isNew: true
@@ -93,28 +83,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
   const duplicateShift = (index: number) => {
     const originalShift = shifts[index]
-    const usedDays = new Set(shifts.map(shift => shift.day_of_week))
     
-    // Find next available day starting from the day after the original
+    // Find next day of the week (cycling through 1-7)
     let nextDay = (originalShift.day_of_week % 7) + 1
-    if (nextDay === 0) nextDay = 7 // Convert 0 to 7 (Sunday)
-    
-    // Look for the next available day
-    let foundAvailableDay = false
-    for (let i = 0; i < 7; i++) {
-      if (!usedDays.has(nextDay)) {
-        foundAvailableDay = true
-        break
-      }
-      nextDay = (nextDay % 7) + 1
-      if (nextDay === 0) nextDay = 7
-    }
-    
-    // If no available day found, show error and return
-    if (!foundAvailableDay) {
-      setError('Ya tienes turnos configurados para todos los días de la semana')
-      return
-    }
+    if (nextDay === 0) nextDay = 7 // Convert 0 to 7 (Sunday)    
     
     const duplicatedShift: ShiftRecord = {
       id: `temp-${Date.now()}`,
@@ -136,22 +108,6 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const updateShift = (index: number, field: keyof ShiftRecord, value: any) => {
-    // If updating day_of_week, check for duplicates
-    if (field === 'day_of_week') {
-      const newDayValue = parseInt(value)
-      const currentShift = shifts[index]
-      
-      // Check if another shift already uses this day
-      const dayAlreadyUsed = shifts.some((shift, i) => 
-        i !== index && shift.day_of_week === newDayValue
-      )
-      
-      if (dayAlreadyUsed) {
-        setError(`Ya tienes un turno configurado para ${DAYS_OF_WEEK.find(d => d.value === newDayValue)?.label}`)
-        return
-      }
-    }
-    
     setShifts(prev => prev.map((shift, i) => 
       i === index 
         ? { ...shift, [field]: value, isNew: shift.id.startsWith('temp-') }
