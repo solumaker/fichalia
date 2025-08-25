@@ -1,9 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { Clock, Save, Plus, X } from 'lucide-react'
 import { ShiftManagementService } from '../../services/shiftManagementService'
-import type { WorkShift, TimeSlot, ShiftValidationError } from '../../types/shift-management.types'
+import type { WorkShift, ShiftValidationError } from '../../types/shift-management.types'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
+
+interface TimeSlot {
+  start_time: string
+  end_time: string
+}
 
 interface ShiftScheduleProps {
   userId: string
@@ -21,29 +26,28 @@ const DAYS_OF_WEEK = [
 ]
 
 export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
-  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([])
+  const [timeSlots, setTimeSlots] = useState<Record<number, TimeSlot>>({})
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [errors, setErrors] = useState<{ [key: string]: ShiftValidationError }>({})
+  const [errors, setErrors] = useState<{ [key: number]: ShiftValidationError }>({})
   const [success, setSuccess] = useState<string | null>(null)
 
   useEffect(() => {
     loadTimeSlots()
   }, [userId])
 
-  const generateId = () => Math.random().toString(36).substr(2, 9)
-
   const loadTimeSlots = async () => {
     try {
       const existingShifts = await ShiftManagementService.getWorkShifts(userId)
       
-      // Convert shifts to time slots
-      const slots: TimeSlot[] = existingShifts.map(shift => ({
-        id: generateId(),
-        day_of_week: shift.day_of_week,
-        start_time: shift.start_time,
-        end_time: shift.end_time
-      }))
+      // Convert shifts to time slots record
+      const slots: Record<number, TimeSlot> = {}
+      existingShifts.forEach(shift => {
+        slots[shift.day_of_week] = {
+          start_time: shift.start_time,
+          end_time: shift.end_time
+        }
+      })
 
       setTimeSlots(slots)
     } catch (error) {
@@ -53,38 +57,41 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     }
   }
 
-  const addTimeSlot = () => {
-    // Default to Monday (1) for new slots
+  const addTimeSlot = (dayOfWeek: number) => {
     const newSlot: TimeSlot = {
-      id: generateId(),
-      day_of_week: 1, // Monday by default
       start_time: '09:00',
       end_time: '17:00'
     }
     
-    setTimeSlots([...timeSlots, newSlot])
+    setTimeSlots({ ...timeSlots, [dayOfWeek]: newSlot })
     setSuccess(null)
   }
 
-  const removeTimeSlot = (slotId: string) => {
-    setTimeSlots(timeSlots.filter(slot => slot.id !== slotId))
+  const removeTimeSlot = (dayOfWeek: number) => {
+    const newTimeSlots = { ...timeSlots }
+    delete newTimeSlots[dayOfWeek]
+    setTimeSlots(newTimeSlots)
     setSuccess(null)
     
-    // Clear errors for this slot
+    // Clear errors for this day
     const newErrors = { ...errors }
-    delete newErrors[slotId]
+    delete newErrors[dayOfWeek]
     setErrors(newErrors)
   }
 
-  const updateTimeSlot = (slotId: string, field: keyof TimeSlot, value: string | number) => {
-    setTimeSlots(timeSlots.map(slot => 
-      slot.id === slotId ? { ...slot, [field]: value } : slot
-    ))
+  const updateTimeSlot = (dayOfWeek: number, field: keyof TimeSlot, value: string) => {
+    setTimeSlots({
+      ...timeSlots,
+      [dayOfWeek]: {
+        ...timeSlots[dayOfWeek],
+        [field]: value
+      }
+    })
     setSuccess(null)
     
-    // Clear errors for this slot
+    // Clear errors for this day
     const newErrors = { ...errors }
-    delete newErrors[slotId]
+    delete newErrors[dayOfWeek]
     setErrors(newErrors)
   }
 
@@ -109,7 +116,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const calculateTotalHours = () => {
-    return timeSlots.reduce((total, slot) => {
+    return Object.values(timeSlots).reduce((total, slot) => {
       const start = new Date(`2000-01-01T${slot.start_time}:00`)
       const end = new Date(`2000-01-01T${slot.end_time}:00`)
       
@@ -136,13 +143,13 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setErrors({})
 
     // Validate all time slots
-    const newErrors: { [key: string]: ShiftValidationError } = {}
+    const newErrors: { [key: number]: ShiftValidationError } = {}
     let hasErrors = false
 
-    timeSlots.forEach(slot => {
+    Object.entries(timeSlots).forEach(([dayOfWeek, slot]) => {
       const slotErrors = validateTimeSlot(slot)
       if (Object.keys(slotErrors).length > 0) {
-        newErrors[slot.id] = slotErrors
+        newErrors[parseInt(dayOfWeek)] = slotErrors
         hasErrors = true
       }
     })
@@ -156,9 +163,9 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
 
     try {
-      // Convert all time slots to shifts format (allow multiple per day)
-      const shiftsToSave = timeSlots.map(slot => ({
-        day_of_week: slot.day_of_week,
+      // Convert time slots record to shifts format
+      const shiftsToSave = Object.entries(timeSlots).map(([dayOfWeek, slot]) => ({
+        day_of_week: parseInt(dayOfWeek),
         start_time: slot.start_time,
         end_time: slot.end_time,
         is_active: true,
@@ -182,6 +189,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     }
   }
 
+  const getAvailableDays = () => {
+    return DAYS_OF_WEEK.filter(day => !timeSlots[day.value])
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -191,8 +202,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const totalHours = calculateTotalHours()
-  const weeklyHours = totalHours // This is now total hours across all slots
-  const monthlyHours = weeklyHours * 4.33
+  const slotsCount = Object.keys(timeSlots).length
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-200">
@@ -204,7 +214,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
               Gestión de Turnos
             </h2>
             <p className="text-sm text-gray-600 mt-1">
-              Crea múltiples franjas horarias para cualquier día
+              Configura un turno para cada día de la semana
             </p>
           </div>
           <div className="text-right">
@@ -213,7 +223,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
               {ShiftManagementService.formatHours(totalHours)}
             </p>
             <p className="text-xs text-gray-500">
-              {timeSlots.length} franja{timeSlots.length !== 1 ? 's' : ''}
+              {slotsCount} día{slotsCount !== 1 ? 's' : ''}
             </p>
           </div>
         </div>
@@ -233,52 +243,70 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         <div className="space-y-4">
           {/* Add Time Slot Button */}
           <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium text-gray-700">Franjas Horarias</h3>
-            <Button
-              onClick={addTimeSlot}
-              variant="secondary"
-              size="sm"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              Franja
-            </Button>
+            <h3 className="text-sm font-medium text-gray-700">Turnos por Día</h3>
+            <div className="flex gap-2">
+              {getAvailableDays().slice(0, 3).map(day => (
+                <Button
+                  key={day.value}
+                  onClick={() => addTimeSlot(day.value)}
+                  variant="secondary"
+                  size="sm"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  {day.label}
+                </Button>
+              ))}
+              {getAvailableDays().length > 3 && (
+                <select
+                  onChange={(e) => {
+                    if (e.target.value) {
+                      addTimeSlot(parseInt(e.target.value))
+                      e.target.value = ''
+                    }
+                  }}
+                  className="px-3 py-1 text-sm border border-gray-300 rounded-lg"
+                  defaultValue=""
+                >
+                  <option value="">+ Más días</option>
+                  {getAvailableDays().slice(3).map(day => (
+                    <option key={day.value} value={day.value}>
+                      {day.label}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
 
           {/* Time Slots List */}
-          {timeSlots.length === 0 ? (
+          {slotsCount === 0 ? (
             <div className="text-center py-8 text-gray-500">
               <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-              <p className="text-sm mb-4">No hay franjas horarias configuradas</p>
-              <Button onClick={addTimeSlot} variant="primary" size="sm">
+              <p className="text-sm mb-4">No hay turnos configurados</p>
+              <Button onClick={() => addTimeSlot(1)} variant="primary" size="sm">
                 <Plus className="w-4 h-4 mr-2" />
-                Agregar Primera Franja
+                Agregar Primer Turno
               </Button>
             </div>
           ) : (
             <div className="space-y-3">
-              {timeSlots.map((slot, index) => {
-                const slotErrors = errors[slot.id] || {}
+              {Object.entries(timeSlots).map(([dayOfWeek, slot]) => {
+                const dayNum = parseInt(dayOfWeek)
+                const dayLabel = DAYS_OF_WEEK.find(d => d.value === dayNum)?.label || 'Día'
+                const slotErrors = errors[dayNum] || {}
                 const slotHours = calculateSlotHours(slot)
                 
                 return (
-                  <div key={slot.id} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <div key={dayOfWeek} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
                     <div className="flex items-center gap-4">
-                      {/* Day Selector */}
+                      {/* Day Label */}
                       <div className="flex-1">
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                           Día
                         </label>
-                        <select
-                          value={slot.day_of_week}
-                          onChange={(e) => updateTimeSlot(slot.id, 'day_of_week', parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        >
-                          {DAYS_OF_WEEK.map(day => (
-                            <option key={day.value} value={day.value}>
-                              {day.label}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-gray-100 text-gray-700 font-medium">
+                          {dayLabel}
+                        </div>
                       </div>
 
                       {/* Start Time */}
@@ -289,7 +317,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                         <input
                           type="time"
                           value={slot.start_time}
-                          onChange={(e) => updateTimeSlot(slot.id, 'start_time', e.target.value)}
+                          onChange={(e) => updateTimeSlot(dayNum, 'start_time', e.target.value)}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                             slotErrors.start_time ? 'border-red-300' : 'border-gray-300'
                           }`}
@@ -307,7 +335,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                         <input
                           type="time"
                           value={slot.end_time}
-                          onChange={(e) => updateTimeSlot(slot.id, 'end_time', e.target.value)}
+                          onChange={(e) => updateTimeSlot(dayNum, 'end_time', e.target.value)}
                           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
                             slotErrors.end_time ? 'border-red-300' : 'border-gray-300'
                           }`}
@@ -331,9 +359,9 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                       <div className="flex items-end pb-2">
                         <button
                           type="button"
-                          onClick={() => removeTimeSlot(slot.id)}
+                          onClick={() => removeTimeSlot(dayNum)}
                           className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Eliminar franja"
+                          title="Eliminar turno"
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -347,41 +375,27 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         </div>
 
         {/* Summary */}
-        {timeSlots.length > 0 && (
+        {slotsCount > 0 && (
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
             <h3 className="text-sm font-medium text-blue-900 mb-2">Resumen</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
               <div>
-                <p className="text-blue-700">Total de franjas</p>
-                <p className="font-semibold text-blue-900">{timeSlots.length}</p>
+                <p className="text-blue-700">Días configurados</p>
+                <p className="font-semibold text-blue-900">{slotsCount}</p>
               </div>
               <div>
                 <p className="text-blue-700">Horas totales</p>
                 <p className="font-semibold text-blue-900">{ShiftManagementService.formatHours(totalHours)}</p>
               </div>
               <div>
-                <p className="text-blue-700">Promedio por franja</p>
+                <p className="text-blue-700">Promedio por día</p>
                 <p className="font-semibold text-blue-900">
-                  {timeSlots.length > 0 ? ShiftManagementService.formatHours(totalHours / timeSlots.length) : '0h 0m'}
+                  {slotsCount > 0 ? ShiftManagementService.formatHours(totalHours / slotsCount) : '0h 0m'}
                 </p>
               </div>
               <div>
-                <p className="text-blue-700">Días únicos</p>
-                <p className="font-semibold text-blue-900">
-                  {new Set(timeSlots.map(slot => slot.day_of_week)).size}
-                </p>
-                <div>
-                  <p className="text-blue-700">Días con múltiples franjas</p>
-                  <p className="font-semibold text-blue-900">
-                    {(() => {
-                      const dayCount = new Map<number, number>()
-                      timeSlots.forEach(slot => {
-                        dayCount.set(slot.day_of_week, (dayCount.get(slot.day_of_week) || 0) + 1)
-                      })
-                      return Array.from(dayCount.values()).filter(count => count > 1).length
-                    })()}
-                  </p>
-                </div>
+                <p className="text-blue-700">Días disponibles</p>
+                <p className="font-semibold text-blue-900">{7 - slotsCount}</p>
               </div>
             </div>
           </div>
@@ -391,7 +405,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
           <Button
             onClick={handleSave}
             loading={saving}
-            disabled={saving || timeSlots.length === 0}
+            disabled={saving || slotsCount === 0}
           >
             <Save className="w-4 h-4 mr-2" />
             {saving ? 'Guardando...' : 'Guardar Turnos'}
