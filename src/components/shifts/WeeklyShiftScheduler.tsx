@@ -644,7 +644,6 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
             </div>
           </div>
         )}
-        )}
 
         {/* Publish Button */}
         {activeTab === 'shifts' && (
