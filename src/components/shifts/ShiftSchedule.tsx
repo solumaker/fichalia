@@ -179,6 +179,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       setError(error.message || 'Error al guardar los turnos')
     } finally {
       setSaving(false)
+    }
   }
 
   if (loading) {
