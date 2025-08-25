@@ -156,16 +156,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
 
     try {
-      // Process time slots to handle multiple slots per day
-      // Keep only the last time slot for each day to comply with unique constraint
-      const daySlotMap = new Map<number, TimeSlot>()
-      
-      timeSlots.forEach(slot => {
-        daySlotMap.set(slot.day_of_week, slot)
-      })
-      
-      // Convert processed slots to shifts format
-      const shiftsToSave = Array.from(daySlotMap.values()).map(slot => ({
+      // Convert all time slots to shifts format (allow multiple per day)
+      const shiftsToSave = timeSlots.map(slot => ({
         day_of_week: slot.day_of_week,
         start_time: slot.start_time,
         end_time: slot.end_time,
