@@ -144,7 +144,7 @@ serve(async (req) => {
       )
     }
 
-    // Validate shifts before inserting
+    // Validate and process shifts before inserting
     console.log('🔍 Validating shifts before inserting...')
     for (let i = 0; i < shifts.length; i++) {
       const shift = shifts[i] as WorkShiftInput
@@ -172,8 +172,60 @@ serve(async (req) => {
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+      
+      // Validate time format (HH:MM)
+      const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+      if (!timeRegex.test(shift.start_time) || !timeRegex.test(shift.end_time)) {
+        console.error('❌ Invalid time format for shift', i + 1, ':', { start_time: shift.start_time, end_time: shift.end_time })
+        return new Response(
+          JSON.stringify({ error: `Invalid time format for shift ${i + 1}. Use HH:MM format.` }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        )
+      }
     }
     console.log('✅ All shifts validated')
+
+    // Check for overlapping shifts on the same day
+    console.log('🔍 Checking for overlapping shifts...')
+    const shiftsByDay: { [key: number]: WorkShiftInput[] } = {}
+    
+    shifts.forEach((shift: WorkShiftInput, index: number) => {
+      if (!shiftsByDay[shift.day_of_week]) {
+        shiftsByDay[shift.day_of_week] = []
+      }
+      shiftsByDay[shift.day_of_week].push(shift)
+    })
+    
+    // Validate no overlapping times for same day
+    for (const [day, dayShifts] of Object.entries(shiftsByDay)) {
+      if (dayShifts.length > 1) {
+        console.log(`📅 Checking ${dayShifts.length} shifts for day ${day}`)
+        
+        // Sort shifts by start time
+        dayShifts.sort((a, b) => a.start_time.localeCompare(b.start_time))
+        
+        for (let i = 0; i < dayShifts.length - 1; i++) {
+          const currentShift = dayShifts[i]
+          const nextShift = dayShifts[i + 1]
+          
+          // Convert times to minutes for comparison
+          const currentEnd = timeToMinutes(currentShift.end_time)
+          const nextStart = timeToMinutes(nextShift.start_time)
+          
+          if (currentEnd > nextStart) {
+            const dayName = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][parseInt(day)]
+            console.error('❌ Overlapping shifts detected for day', day)
+            return new Response(
+              JSON.stringify({ 
+                error: `Turnos superpuestos detectados para ${dayName}: ${currentShift.start_time}-${currentShift.end_time} y ${nextShift.start_time}-${nextShift.end_time}` 
+              }),
+              { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+            )
+          }
+        }
+      }
+    })
+    console.log('✅ No overlapping shifts detected')
 
     // Insert new shifts (using service role bypasses RLS)
     console.log('💾 Inserting new shifts...')
@@ -218,3 +270,9 @@ serve(async (req) => {
     )
   }
 })
+
+// Helper function to convert time string to minutes
+function timeToMinutes(timeStr: string): number {
+  const [hours, minutes] = timeStr.split(':').map(Number)
+  return hours * 60 + minutes
+}

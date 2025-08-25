@@ -72,15 +72,21 @@ export class ShiftManagementService {
     const payload = { userId, shifts }
     console.log('📦 Payload:', payload)
     
-    const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`, {
+    // Add timeout to prevent hanging
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      signal: controller.signal
     })
     
+    clearTimeout(timeoutId)
     console.log('📨 Response status:', response.status)
     console.log('📨 Response ok:', response.ok)
 
@@ -99,6 +105,16 @@ export class ShiftManagementService {
     }
     
     console.log('✅ Shifts saved successfully:', result)
+  } catch (error: any) {
+    console.error('❌ Error in saveWorkShifts:', error)
+    
+    // Handle specific error types
+    if (error.name === 'AbortError') {
+      throw new Error('La operación tardó demasiado tiempo. Por favor, inténtalo de nuevo.')
+    }
+    
+    // Re-throw the error to be handled by the component
+    throw error
   }
 
   static async updateWorkShift(shiftId: string, updates: Partial<WorkShiftInput>): Promise<void> {

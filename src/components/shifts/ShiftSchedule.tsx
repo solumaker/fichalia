@@ -154,6 +154,15 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
           errors.push(`Turno ${index + 1}: Hora inicio y fin no pueden ser iguales`)
         }
         
+        // Validate time format
+        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
+        if (shift.start_time && !timeRegex.test(shift.start_time)) {
+          errors.push(`Turno ${index + 1}: Formato de hora de inicio inválido`)
+        }
+        if (shift.end_time && !timeRegex.test(shift.end_time)) {
+          errors.push(`Turno ${index + 1}: Formato de hora de fin inválido`)
+        }
+        
         return errors
       }).flat()
       
@@ -162,6 +171,42 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
         throw new Error(validationErrors.join(', '))
       }
       console.log('✅ Validation passed')
+      
+      // Check for overlapping shifts on the same day
+      console.log('🔍 Checking for overlapping shifts...')
+      const shiftsByDay: { [key: number]: typeof shifts } = {}
+      
+      shifts.forEach((shift, index) => {
+        if (!shiftsByDay[shift.day_of_week]) {
+          shiftsByDay[shift.day_of_week] = []
+        }
+        shiftsByDay[shift.day_of_week].push(shift)
+      })
+      
+      // Validate no overlapping times for same day
+      for (const [day, dayShifts] of Object.entries(shiftsByDay)) {
+        if (dayShifts.length > 1) {
+          console.log(`📅 Checking ${dayShifts.length} shifts for day ${day}`)
+          
+          // Sort shifts by start time
+          dayShifts.sort((a, b) => a.start_time.localeCompare(b.start_time))
+          
+          for (let i = 0; i < dayShifts.length - 1; i++) {
+            const currentShift = dayShifts[i]
+            const nextShift = dayShifts[i + 1]
+            
+            // Convert times to minutes for comparison
+            const currentEnd = timeToMinutes(currentShift.end_time)
+            const nextStart = timeToMinutes(nextShift.start_time)
+            
+            if (currentEnd > nextStart) {
+              const dayName = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][parseInt(day)]
+              throw new Error(`Turnos superpuestos detectados para ${dayName}: ${currentShift.start_time}-${currentShift.end_time} y ${nextShift.start_time}-${nextShift.end_time}`)
+            }
+          }
+        }
+      }
+      console.log('✅ No overlapping shifts detected')
       
       // Convert shifts to the format expected by the service
       console.log('🔄 Converting shifts to service format...')
@@ -212,6 +257,12 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       setSaving(false)
       console.log('✅ handleSave completed')
     }
+  }
+  
+  // Helper function to convert time string to minutes
+  const timeToMinutes = (timeStr: string): number => {
+    const [hours, minutes] = timeStr.split(':').map(Number)
+    return hours * 60 + minutes
   }
 
   if (loading) {
