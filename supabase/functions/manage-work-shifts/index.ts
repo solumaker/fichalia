@@ -142,14 +142,25 @@ serve(async (req) => {
         )
       }
       
-      // Validate time format (HH:MM)
+      // Validate time format (HH:MM) - More flexible regex
       const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-      if (!timeRegex.test(shift.start_time) || !timeRegex.test(shift.end_time)) {
+      
+      // Trim whitespace and ensure string format
+      const startTime = String(shift.start_time).trim()
+      const endTime = String(shift.end_time).trim()
+      
+      if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
         return new Response(
-          JSON.stringify({ error: `Invalid time format for shift ${i + 1}. Use HH:MM format.` }),
+          JSON.stringify({ 
+            error: `Invalid time format for shift ${i + 1}. Use HH:MM format. Received: start="${startTime}", end="${endTime}"` 
+          }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         )
       }
+      
+      // Update the shift with cleaned values
+      shifts[i].start_time = startTime
+      shifts[i].end_time = endTime
     }
 
     // STEP 4: Insert ALL new shifts (using service role bypasses RLS)

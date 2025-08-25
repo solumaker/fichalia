@@ -141,21 +141,25 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       const validationErrors = shifts.map((shift, index) => {
         const errors: string[] = []
         
-        if (!shift.start_time || !shift.end_time) {
+        // Ensure times are strings and trimmed
+        const startTime = String(shift.start_time || '').trim()
+        const endTime = String(shift.end_time || '').trim()
+        
+        if (!startTime || !endTime) {
           errors.push(`Turno ${index + 1}: Horarios requeridos`)
         }
         
-        if (shift.start_time === shift.end_time) {
+        if (startTime === endTime) {
           errors.push(`Turno ${index + 1}: Hora inicio y fin no pueden ser iguales`)
         }
         
         // Validate time format
         const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-        if (shift.start_time && !timeRegex.test(shift.start_time)) {
-          errors.push(`Turno ${index + 1}: Formato de hora de inicio inválido`)
+        if (startTime && !timeRegex.test(startTime)) {
+          errors.push(`Turno ${index + 1}: Formato de hora de inicio inválido (recibido: "${startTime}")`)
         }
-        if (shift.end_time && !timeRegex.test(shift.end_time)) {
-          errors.push(`Turno ${index + 1}: Formato de hora de fin inválido`)
+        if (endTime && !timeRegex.test(endTime)) {
+          errors.push(`Turno ${index + 1}: Formato de hora de fin inválido (recibido: "${endTime}")`)
         }
         
         return errors
@@ -168,8 +172,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       // Convert shifts to the format expected by the service
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
-        start_time: shift.start_time,
-        end_time: shift.end_time,
+        start_time: String(shift.start_time).trim(),
+        end_time: String(shift.end_time).trim(),
         is_active: true,
         break_duration_minutes: 0
       }))
