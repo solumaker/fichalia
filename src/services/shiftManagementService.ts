@@ -53,62 +53,34 @@ export class ShiftManagementService {
   }
 
   static async saveWorkShifts(userId: string, shifts: WorkShiftInput[]): Promise<void> {
-    // Get current session to authenticate with Edge Function
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
     if (sessionError || !session) {
       throw new Error('No hay sesión activa')
     }
 
     try {
-      // Validate shifts before saving
-      const validationErrors = shifts.map((shift, index) => {
-        const errors: string[] = []
-        
-        // Ensure times are strings, trimmed, and convert HH:MM:SS to HH:MM
-        let startTime = String(shift.start_time || '').trim()
-        let endTime = String(shift.end_time || '').trim()
-        
-        // Convert HH:MM:SS to HH:MM if needed
-        startTime = startTime.length > 5 ? startTime.substring(0, 5) : startTime
-        endTime = endTime.length > 5 ? endTime.substring(0, 5) : endTime
-        
-        if (!startTime || !endTime) {
-          errors.push(`Turno ${index + 1}: Horarios requeridos`)
-        }
-        
-        // Validate time format
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-        if (startTime && !timeRegex.test(startTime)) {
-          errors.push(`Turno ${index + 1}: Formato de hora de inicio inválido (original: "${shift.start_time}", limpio: "${startTime}")`)
-        }
-        if (endTime && !timeRegex.test(endTime)) {
-          errors.push(`Turno ${index + 1}: Formato de hora de fin inválido (original: "${shift.end_time}", limpio: "${endTime}")`)
-        }
-        
-        return errors
-      }).flat()
 
-      if (validationErrors.length > 0) {
-        throw new Error(`Errores de validación:\n${validationErrors.join('\n')}`)
-      }
 
-      // Convert shifts to the format expected by the service
-      const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
-        day_of_week: shift.day_of_week,
-        start_time: String(shift.start_time).trim().substring(0, 5), // Ensure HH:MM format
-        end_time: String(shift.end_time).trim().substring(0, 5), // Ensure HH:MM format
-        is_active: true,
-        break_duration_minutes: 0
-      }))
+      // Normalize and clean shifts data
+      const shiftsToSave: WorkShiftInput[] = shifts.map(shift => {
+        const startTime = this.normalizeTimeFormat(shift.start_time)
+        const endTime = this.normalizeTimeFormat(shift.end_time)
+        
+        return {
+          day_of_week: shift.day_of_week,
+          start_time: startTime,
+          end_time: endTime,
+          is_active: shift.is_active !== false,
+          break_duration_minutes: shift.break_duration_minutes || 0
+        }
+      })
 
-      // Call Edge Function to manage work shifts (bypasses RLS)
       const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/manage-work-shifts`
       
       const payload = { userId, shifts: shiftsToSave }
       
-      // Add timeout to prevent hanging - reduced to 15 seconds for faster feedback
       const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 30000)
       
       const response = await fetch(url, {
         method: 'POST',
@@ -134,15 +106,32 @@ export class ShiftManagementService {
       }
       
     } catch (error: any) {
-      
-      // Handle specific error types
       if (error.name === 'AbortError') {
         throw new Error('La operación tardó demasiado tiempo. Por favor, inténtalo de nuevo.')
       }
       
-      // Re-throw the error to be handled by the component
       throw error
     }
+  }
+
+  // Helper method to normalize time format consistently
+  private static normalizeTimeFormat(time: string | undefined): string {
+    if (!time) return '09:00'
+    
+    const timeStr = String(time).trim()
+    
+    // If it's already HH:MM format, return as is
+    if (timeStr.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+      return timeStr
+    }
+    
+    // If it's HH:MM:SS format, convert to HH:MM
+    if (timeStr.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/)) {
+      return timeStr.substring(0, 5)
+    }
+    
+    // Default fallback
+    return '09:00'
   }
 
   static async updateWorkShift(shiftId: string, updates: Partial<WorkShiftInput>): Promise<void> {

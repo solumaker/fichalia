@@ -41,13 +41,15 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
   const loadShifts = async () => {
     try {
+      setError(null)
       const existingShifts = await ShiftManagementService.getWorkShifts(userId)
       
+      // Convert database shifts to clean ShiftRecord format
       const shiftRecords: ShiftRecord[] = existingShifts.map(shift => ({
         id: shift.id,
         day_of_week: shift.day_of_week,
-        start_time: shift.start_time,
-        end_time: shift.end_time
+        start_time: normalizeTimeFormat(shift.start_time),
+        end_time: normalizeTimeFormat(shift.end_time)
       }))
 
       setShifts(shiftRecords)
@@ -59,17 +61,44 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     }
   }
 
+  // Normalize time format to HH:MM consistently
+  const normalizeTimeFormat = (time: string): string => {
+    if (!time) return '09:00'
+    
+    const timeStr = String(time).trim()
+    
+    // If it's already HH:MM format, return as is
+    if (timeStr.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+      return timeStr
+    }
+    
+    // If it's HH:MM:SS format, convert to HH:MM
+    if (timeStr.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9]$/)) {
+      return timeStr.substring(0, 5)
+    }
+    
+    // Default fallback
+    return '09:00'
+  }
+
   const addNewShift = () => {
     // Default to Monday (1) for new shifts
     let defaultDay = 1
     
-    // If there are existing shifts, use the same day as the last shift
+    // If there are existing shifts, use the next available day
     if (shifts.length > 0) {
-      defaultDay = shifts[shifts.length - 1].day_of_week
+      const usedDays = new Set(shifts.map(s => s.day_of_week))
+      for (let day = 1; day <= 7; day++) {
+        const dayValue = day === 7 ? 0 : day // Convert 7 to 0 for Sunday
+        if (!usedDays.has(dayValue)) {
+          defaultDay = dayValue
+          break
+        }
+      }
     }
     
     const newShift: ShiftRecord = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${Date.now()}-${Math.random()}`,
       day_of_week: defaultDay,
       start_time: '09:00',
       end_time: '17:00',
@@ -84,12 +113,20 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   const duplicateShift = (index: number) => {
     const originalShift = shifts[index]
     
-    // Find next day of the week (cycling through 1-7)
-    let nextDay = (originalShift.day_of_week % 7) + 1
-    if (nextDay === 0) nextDay = 7 // Convert 0 to 7 (Sunday)    
+    // Find next available day
+    const usedDays = new Set(shifts.map(s => s.day_of_week))
+    let nextDay = (originalShift.day_of_week + 1) % 7
+    
+    // Find the next unused day
+    for (let i = 0; i < 7; i++) {
+      if (!usedDays.has(nextDay)) {
+        break
+      }
+      nextDay = (nextDay + 1) % 7
+    }
     
     const duplicatedShift: ShiftRecord = {
-      id: `temp-${Date.now()}`,
+      id: `temp-${Date.now()}-${Math.random()}`,
       day_of_week: nextDay,
       start_time: originalShift.start_time,
       end_time: originalShift.end_time,
@@ -108,27 +145,79 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
   }
 
   const updateShift = (index: number, field: keyof ShiftRecord, value: any) => {
-    setShifts(prev => prev.map((shift, i) => 
-      i === index 
-        ? { ...shift, [field]: value, isNew: shift.id.startsWith('temp-') }
-        : shift
-    ))
+    setShifts(prev => prev.map((shift, i) => {
+      if (i === index) {
+        const updatedShift = { ...shift, [field]: value }
+        
+        // Normalize time fields
+        if (field === 'start_time' || field === 'end_time') {
+          updatedShift[field] = normalizeTimeFormat(String(value))
+        }
+        
+        return updatedShift
+      }
+      return shift
+    }))
     setSuccess(null)
     setError(null)
   }
 
-  const calculateHours = (shift: ShiftRecord) => {
-    const start = new Date(`2000-01-01T${shift.start_time}:00`)
-    const end = new Date(`2000-01-01T${shift.end_time}:00`)
-    
-    let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
-    if (hours < 0) hours += 24
-    
-    return Math.max(0, hours)
+  const calculateHours = (shift: ShiftRecord): number => {
+    try {
+      const startTime = normalizeTimeFormat(shift.start_time)
+      const endTime = normalizeTimeFormat(shift.end_time)
+      
+      const start = new Date(`2000-01-01T${startTime}:00`)
+      const end = new Date(`2000-01-01T${endTime}:00`)
+      
+      if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+        return 0
+      }
+      
+      let hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60)
+      if (hours < 0) hours += 24 // Handle overnight shifts
+      
+      return Math.max(0, hours)
+    } catch (error) {
+      console.error('Error calculating hours:', error)
+      return 0
+    }
   }
 
-  const getTotalHours = () => {
+  const getTotalHours = (): number => {
     return shifts.reduce((total, shift) => total + calculateHours(shift), 0)
+  }
+
+  const validateShifts = (shiftsToValidate: ShiftRecord[]): string[] => {
+    const errors: string[] = []
+    
+    shiftsToValidate.forEach((shift, index) => {
+      const shiftNumber = index + 1
+      
+      // Validate time format
+      const startTime = normalizeTimeFormat(shift.start_time)
+      const endTime = normalizeTimeFormat(shift.end_time)
+      
+      if (!startTime.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+        errors.push(`Turno ${shiftNumber}: Formato de hora de inicio inválido`)
+      }
+      
+      if (!endTime.match(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)) {
+        errors.push(`Turno ${shiftNumber}: Formato de hora de fin inválido`)
+      }
+      
+      // Validate times are different
+      if (startTime === endTime) {
+        errors.push(`Turno ${shiftNumber}: La hora de inicio y fin no pueden ser iguales`)
+      }
+      
+      // Validate day of week
+      if (shift.day_of_week < 0 || shift.day_of_week > 6) {
+        errors.push(`Turno ${shiftNumber}: Día de la semana inválido`)
+      }
+    })
+    
+    return errors
   }
 
   const handleSave = async () => {
@@ -137,33 +226,8 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
     setSuccess(null)
     
     try {
-      // Validate shifts before saving
-      const validationErrors = shifts.map((shift, index) => {
-        const errors: string[] = []
-        
-        // Ensure times are strings and trimmed
-        const startTime = String(shift.start_time || '').trim()
-        const endTime = String(shift.end_time || '').trim()
-        
-        if (!startTime || !endTime) {
-          errors.push(`Turno ${index + 1}: Horarios requeridos`)
-        }
-        
-        if (startTime === endTime) {
-          errors.push(`Turno ${index + 1}: Hora inicio y fin no pueden ser iguales`)
-        }
-        
-        // Validate time format
-        const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/
-        if (startTime && !timeRegex.test(startTime)) {
-          errors.push(`Turno ${index + 1}: Formato de hora de inicio inválido (recibido: "${startTime}")`)
-        }
-        if (endTime && !timeRegex.test(endTime)) {
-          errors.push(`Turno ${index + 1}: Formato de hora de fin inválido (recibido: "${endTime}")`)
-        }
-        
-        return errors
-      }).flat()
+      // Validate all shifts before saving
+      const validationErrors = validateShifts(shifts)
       
       if (validationErrors.length > 0) {
         throw new Error(validationErrors.join(', '))
@@ -172,34 +236,32 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
       // Convert shifts to the format expected by the service
       const shiftsToSave: WorkShiftInput[] = shifts.map(shift => ({
         day_of_week: shift.day_of_week,
-        start_time: String(shift.start_time).trim(),
-        end_time: String(shift.end_time).trim(),
+        start_time: normalizeTimeFormat(shift.start_time),
+        end_time: normalizeTimeFormat(shift.end_time),
         is_active: true,
         break_duration_minutes: 0
       }))
 
-      // Save shifts - this will DELETE ALL existing shifts and CREATE the new ones
+      // Save shifts using the "delete all and recreate" strategy
       await ShiftManagementService.saveWorkShifts(userId, shiftsToSave)
       
       setSuccess('✅ Turnos guardados correctamente')
       onSave?.()
       
-      // Reload shifts from database to get the actual IDs
+      // Reload shifts from database to ensure consistency
       await loadShifts()
       
     } catch (error: any) {
-      // Handle different types of errors
       let errorMessage = 'Error al guardar los turnos'
       
       if (error?.message) {
         errorMessage = error.message
       } else if (typeof error === 'string') {
         errorMessage = error
-      } else if (error?.error?.message) {
-        errorMessage = error.error.message
       }
       
       setError(errorMessage)
+      console.error('Save error:', error)
     } finally {
       setSaving(false)
     }
@@ -288,7 +350,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                     <label className="block text-xs text-gray-600 mb-1">Inicio</label>
                     <input
                       type="time"
-                      value={shift.start_time}
+                      value={normalizeTimeFormat(shift.start_time)}
                       onChange={(e) => updateShift(index, 'start_time', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
@@ -299,7 +361,7 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                     <label className="block text-xs text-gray-600 mb-1">Fin</label>
                     <input
                       type="time"
-                      value={shift.end_time}
+                      value={normalizeTimeFormat(shift.end_time)}
                       onChange={(e) => updateShift(index, 'end_time', e.target.value)}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
@@ -318,10 +380,10 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
                     <button
                       onClick={() => duplicateShift(index)}
                       className="inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
-                      title="Duplicar +1 día"
+                      title="Duplicar turno"
                     >
                       <Copy className="w-4 h-4 mr-1" />
-                      +1 día
+                      Duplicar
                     </button>
                     <button
                       onClick={() => removeShift(index)}
@@ -371,15 +433,21 @@ export function ShiftSchedule({ userId, onSave }: ShiftScheduleProps) {
 
         {/* Save Button */}
         <div className="flex justify-end mt-6 pt-6 border-t border-gray-200">
-          <Button
+          <button
             onClick={handleSave}
-            loading={saving}
             disabled={saving || shifts.length === 0}
-            size="lg"
+            className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-6 py-3 text-base ${
+              saving 
+                ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+            }`}
           >
+            {saving && (
+              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current mr-2" />
+            )}
             <Save className="w-5 h-5 mr-2" />
             {saving ? 'Guardando...' : 'Guardar Cambios'}
-          </Button>
+          </button>
         </div>
       </div>
     </div>
