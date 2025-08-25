@@ -224,7 +224,7 @@ serve(async (req) => {
           }
         }
       }
-    })
+    }
     console.log('✅ No overlapping shifts detected')
 
     // Insert new shifts (using service role bypasses RLS)
