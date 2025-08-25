@@ -820,7 +820,7 @@ export function WeeklyShiftScheduler({ userId, userName, onSave }: ShiftSchedule
 
               {shift && shift.timeSlots.length > 0 ? (
                 <div className="space-y-2">
-                  {shift.timeSlots.map((timeSlot, slotIndex) => (
+                  {(shift.timeSlots || []).map((timeSlot, slotIndex) => (
                     <div key={timeSlot.id} className="bg-blue-50 rounded-lg p-2">
                       <div className="flex items-center justify-between">
                         <div className="text-center flex-1">
