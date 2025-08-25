@@ -201,7 +201,7 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
       </div>
 
       {/* Year Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
             <TrendingUp className="w-5 h-5 mr-2" />
@@ -228,33 +228,18 @@ export function OvertimeReport({ userId }: OvertimeReportProps) {
             </div>
           </div>
         </div>
-
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Acciones</h3>
-            <Button onClick={exportToCSV} variant="secondary" size="sm">
-              <Download className="w-4 h-4 mr-2" />
-              Exportar CSV
-            </Button>
-          </div>
-          <div className="space-y-3">
-            <p className="text-sm text-gray-600">
-              • Exporta el historial completo a CSV
-            </p>
-            <p className="text-sm text-gray-600">
-              • Recalcula automáticamente cada mes
-            </p>
-            <p className="text-sm text-gray-600">
-              • Incluye desglose de horas regulares y extra
-            </p>
-          </div>
-        </div>
       </div>
 
       {/* History Table */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         <div className="p-6 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">Historial Mensual</h3>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">Historial Mensual</h3>
+            <Button onClick={exportToCSV} variant="secondary" size="sm">
+              <Download className="w-4 h-4 mr-2" />
+              Exportar CSV
+            </Button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full">
