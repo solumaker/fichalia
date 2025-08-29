@@ -245,7 +245,7 @@ export function EmployeeDashboard() {
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-gray-900 flex items-center">
-                Historial de Fichajes
+                Mis Fichajes
               </h2>
               <div className="flex items-center space-x-2">
                 <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
