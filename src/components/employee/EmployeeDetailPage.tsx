@@ -335,6 +335,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 <span className="hidden sm:inline">Volver</span>
               </button>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">Perfil de Empleado</h1>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Información detallada y gestión del empleado</p>
+              </div>
             </div>
             <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               {/* Empty space for future actions if needed */}
@@ -344,12 +348,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
       </header>
 
       <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
-        {/* Page Title Section */}
-        <div className="mb-6">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Perfil de Empleado</h1>
-          <p className="text-gray-600">Información detallada y gestión del empleado</p>
-        </div>
-
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
           <div className="border-b border-gray-200">
