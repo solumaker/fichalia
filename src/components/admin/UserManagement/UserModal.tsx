@@ -24,7 +24,9 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [validationError, setValidationError] = useState('')
+  const [passwordMismatchError, setPasswordMismatchError] = useState('')
 
+  // Reset form when modal opens/closes or editing user changes
   useEffect(() => {
     if (editingUser) {
       setFormData({
@@ -45,10 +47,25 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
     setShowPassword(false)
     setShowConfirmPassword(false)
     setValidationError('')
+    setPasswordMismatchError('')
   }, [editingUser, isOpen])
+
+  // Real-time password validation
+  useEffect(() => {
+    setValidationError('')
+    setPasswordMismatchError('')
+    
+    // Only validate password mismatch for new users when both fields have content
+    if (!editingUser && formData.password && confirmPassword) {
+      if (formData.password !== confirmPassword) {
+        setPasswordMismatchError('Las contraseñas no coinciden')
+      }
+    }
+  }, [formData.password, confirmPassword, editingUser])
 
   const validateForm = () => {
     setValidationError('')
+    setPasswordMismatchError('')
     
     if (!formData.full_name.trim()) {
       setValidationError('El nombre completo es requerido')
@@ -59,7 +76,15 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
       setValidationError('El correo electrónico es requerido')
       return false
     }
+
+    // Email format validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(formData.email.trim())) {
+      setValidationError('Por favor ingresa un correo electrónico válido')
+      return false
+    }
     
+    // Password validation for new users
     if (!editingUser) {
       if (!formData.password.trim()) {
         setValidationError('La contraseña es requerida para nuevos usuarios')
@@ -71,8 +96,13 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
         return false
       }
       
+      if (!confirmPassword.trim()) {
+        setValidationError('Debes confirmar la contraseña')
+        return false
+      }
+      
       if (formData.password !== confirmPassword) {
-        setValidationError('Las contraseñas no coinciden')
+        setPasswordMismatchError('Las contraseñas no coinciden')
         return false
       }
     }
@@ -83,26 +113,53 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('Form submitted with data:', {
+      ...formData,
+      password: formData.password ? '[HIDDEN]' : '[EMPTY]',
+      confirmPassword: confirmPassword ? '[HIDDEN]' : '[EMPTY]',
+      isEditing: !!editingUser
+    })
+    
     if (!validateForm()) {
+      console.log('Form validation failed')
       return
     }
     
     setLoading(true)
     
     try {
+      console.log('Calling onSubmit...')
       await onSubmit(formData)
+      console.log('onSubmit completed successfully')
       // Modal will be closed by parent component if successful
     } catch (err) {
+      console.error('Error in onSubmit:', err)
       // Error is handled by parent component
     } finally {
       setLoading(false)
     }
   }
 
-  const isFormValid = formData.full_name.trim() && 
-                     formData.email.trim() && 
-                     formData.role && 
-                     (editingUser || (formData.password.trim() && formData.password === confirmPassword && formData.password.length >= 6))
+  // Calculate if form is valid for button state
+  const isFormValid = () => {
+    const hasRequiredFields = formData.full_name.trim() && 
+                             formData.email.trim() && 
+                             formData.role
+
+    if (editingUser) {
+      // For editing, we don't require password
+      return hasRequiredFields
+    } else {
+      // For new users, require password and confirmation
+      return hasRequiredFields && 
+             formData.password.trim() && 
+             formData.password.length >= 6 &&
+             confirmPassword.trim() &&
+             formData.password === confirmPassword
+    }
+  }
+
+  const formValid = isFormValid()
 
   return (
     <Modal
@@ -111,6 +168,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
       title={editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
     >
       <form onSubmit={handleSubmit}>
+        {/* General Error Messages */}
         {(error || validationError) && (
           <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
             {error || validationError}
@@ -118,6 +176,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
         )}
         
         <div className="space-y-4">
+          {/* Full Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="text-red-500 mr-1">*</span>
@@ -130,9 +189,11 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
               onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Ingresa el nombre completo"
+              autoComplete="name"
             />
           </div>
           
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="text-red-500 mr-1">*</span>
@@ -145,9 +206,11 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="correo@empresa.com"
+              autoComplete="email"
             />
           </div>
           
+          {/* Role */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               <span className="text-red-500 mr-1">*</span>
@@ -163,6 +226,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
             </select>
           </div>
           
+          {/* Password */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               {!editingUser && <span className="text-red-500 mr-1">*</span>}
@@ -177,17 +241,19 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
                 className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="••••••••"
                 minLength={6}
+                autoComplete="new-password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
           </div>
           
+          {/* Confirm Password - Only for new users */}
           {!editingUser && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -197,46 +263,72 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
               <div className="relative">
                 <input
                   type={showConfirmPassword ? "text" : "password"}
-                  required={!editingUser}
+                  required
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    formData.password && confirmPassword && formData.password !== confirmPassword 
-                      ? 'border-red-300' 
+                    passwordMismatchError 
+                      ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
                       : 'border-gray-300'
                   }`}
                   placeholder="••••••••"
                   minLength={6}
+                  autoComplete="new-password"
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {formData.password && confirmPassword && formData.password !== confirmPassword && (
-                <p className="text-red-500 text-xs mt-1">Las contraseñas no coinciden</p>
+              {/* Password Mismatch Error */}
+              {passwordMismatchError && (
+                <p className="text-red-500 text-xs mt-1 flex items-center">
+                  <span className="w-1 h-1 bg-red-500 rounded-full mr-2"></span>
+                  {passwordMismatchError}
+                </p>
               )}
             </div>
           )}
         </div>
         
+        {/* Debug Info - Remove in production */}
+        <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
+          <p><strong>Debug Info:</strong></p>
+          <p>Form Valid: {formValid ? '✅' : '❌'}</p>
+          <p>Loading: {loading ? '✅' : '❌'}</p>
+          <p>Name: {formData.full_name ? '✅' : '❌'}</p>
+          <p>Email: {formData.email ? '✅' : '❌'}</p>
+          {!editingUser && (
+            <>
+              <p>Password: {formData.password && formData.password.length >= 6 ? '✅' : '❌'}</p>
+              <p>Confirm: {confirmPassword ? '✅' : '❌'}</p>
+              <p>Match: {formData.password === confirmPassword ? '✅' : '❌'}</p>
+            </>
+          )}
+        </div>
+        
+        {/* Form Actions */}
         <div className="flex justify-end space-x-3 mt-6">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={onClose} disabled={loading}>
             Cancelar
           </Button>
           <button
             type="submit"
-            disabled={loading || !isFormValid}
-            className="inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 px-4 py-2 text-sm"
+            disabled={loading || !formValid}
+            className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 px-4 py-2 text-sm ${
+              loading || !formValid
+                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 hover:shadow-md'
+            }`}
           >
             {loading && (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
             )}
             <Save className="w-4 h-4 mr-2" />
-            {editingUser ? 'Actualizar' : 'Crear'}
+            {loading ? 'Procesando...' : (editingUser ? 'Actualizar' : 'Crear')}
           </button>
         </div>
       </form>
