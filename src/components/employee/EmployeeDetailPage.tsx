@@ -38,6 +38,9 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   const [imagePreview, setImagePreview] = useState<string>('')
   const [success, setSuccess] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
   const [editFormData, setEditFormData] = useState({
     full_name: '',
     email: '',
