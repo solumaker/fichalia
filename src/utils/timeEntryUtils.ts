@@ -78,19 +78,21 @@ export class TimeEntryUtils {
 
   static formatDuration(minutes: number | null): string {
     if (minutes === null || minutes === undefined) return 'En curso...'
-    if (minutes === 0) return '0m'
+    if (minutes === 0) return '00:00'
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    return `${hours}h ${mins}m`
+    const hoursStr = hours.toString().padStart(2, '0')
+    const minsStr = mins.toString().padStart(2, '0')
+    return `${hoursStr}:${minsStr}`
   }
 
   static formatTotalDuration(minutes: number): string {
+    if (minutes === 0) return '00:00'
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    if (hours === 0) {
-      return `${mins}m`
-    }
-    return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`
+    const hoursStr = hours.toString().padStart(2, '0')
+    const minsStr = mins.toString().padStart(2, '0')
+    return `${hoursStr}:${minsStr}`
   }
 
   static formatTimestamp(timestamp: string, formatString: string = 'HH:mm:ss'): string {

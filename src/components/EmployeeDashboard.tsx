@@ -164,18 +164,21 @@ export function EmployeeDashboard() {
   }, 0)
 
   const formatTotalDuration = (minutes: number) => {
+    if (minutes === 0) return '00:00'
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    if (hours === 0) {
-      return `${mins}m`
-    }
-    return mins === 0 ? `${hours}h` : `${hours}h ${mins}m`
+    const hoursStr = hours.toString().padStart(2, '0')
+    const minsStr = mins.toString().padStart(2, '0')
+    return `${hoursStr}:${minsStr}`
   }
   const formatDuration = (minutes: number | null) => {
-    if (!minutes) return 'En curso...'
+    if (minutes === null || minutes === undefined) return 'En curso...'
+    if (minutes === 0) return '00:00'
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
-    return `${hours}h ${mins}m`
+    const hoursStr = hours.toString().padStart(2, '0')
+    const minsStr = mins.toString().padStart(2, '0')
+    return `${hoursStr}:${minsStr}`
   }
 
   const canCheckIn = !lastEntry || lastEntry.entry_type === 'check_out'
