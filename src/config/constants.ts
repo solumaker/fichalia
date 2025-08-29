@@ -1,5 +1,5 @@
 export const APP_CONFIG = {
-  name: 'Fichalia',
+  name: 'Fichagil',
   description: 'Control de Fichajes - Time Tracking Application',
   version: '1.0.0'
 }

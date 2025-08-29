@@ -9,9 +9,9 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
       manifest: {
-        name: 'Fichalia',
-        short_name: 'Fichalia',
-        description: 'Fichalia - Aplicación para el control de fichajes laborales',
+        name: 'Fichagil',
+        short_name: 'Fichagil',
+        description: 'Fichagil - Aplicación para el control de fichajes laborales',
         theme_color: '#3b82f6',
         background_color: '#ffffff',
         display: 'standalone',

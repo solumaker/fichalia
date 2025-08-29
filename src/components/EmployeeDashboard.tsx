@@ -191,7 +191,7 @@ export function EmployeeDashboard() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Fichalia</h1>
+            <h1 className="text-xl font-bold text-gray-900">Fichagil</h1>
             <p className="text-sm text-gray-600">Bienvenido, {profile?.full_name}</p>
           </div>
           <div className="flex items-center space-x-2">

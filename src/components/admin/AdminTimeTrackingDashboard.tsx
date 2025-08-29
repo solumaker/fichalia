@@ -196,7 +196,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
       <header className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200">
         <div className="px-4 py-3 sm:py-4 flex justify-between items-center max-w-md mx-auto">
           <div className="min-w-0 flex-1">
-            <h1 className="text-xl font-bold text-gray-900">Fichalia</h1>
+            <h1 className="text-xl font-bold text-gray-900">Fichagil</h1>
             <p className="text-sm text-gray-600 truncate">Admin: {profile?.full_name}</p>
           </div>
           <div className="flex items-center space-x-2 flex-shrink-0">
