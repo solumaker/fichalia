@@ -30,14 +30,22 @@ export class TimeEntryUtils {
     )
     
     const pairs: PairedTimeEntry[] = []
+    const usedCheckOuts = new Set<string>()
     
     for (let i = 0; i < sortedEntries.length; i++) {
       const entry = sortedEntries[i]
       if (entry.entry_type === 'check_in') {
-        // Find the next check_out entry
+        // Find the next unused check_out entry
         const checkOut = sortedEntries.find((e, idx) => 
-          idx > i && e.entry_type === 'check_out'
+          idx > i && 
+          e.entry_type === 'check_out' && 
+          !usedCheckOuts.has(e.id)
         )
+        
+        // Mark this check_out as used if found
+        if (checkOut) {
+          usedCheckOuts.add(checkOut.id)
+        }
         
         const checkInDate = format(new Date(entry.timestamp), 'yyyy-MM-dd')
         const checkOutDate = checkOut ? format(new Date(checkOut.timestamp), 'yyyy-MM-dd') : null
