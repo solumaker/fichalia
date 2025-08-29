@@ -58,7 +58,7 @@ export class TimeEntryUtils {
           checkIn: entry,
           checkOut: checkOut || null,
           duration: checkOut ? 
-            Math.round((new Date(checkOut.timestamp).getTime() - new Date(entry.timestamp).getTime()) / (1000 * 60)) : 
+            Math.max(0, Math.round((new Date(checkOut.timestamp).getTime() - new Date(entry.timestamp).getTime()) / (1000 * 60))) : 
             null,
           isCrossMidnight
         })
@@ -77,7 +77,8 @@ export class TimeEntryUtils {
   }
 
   static formatDuration(minutes: number | null): string {
-    if (!minutes) return 'En curso...'
+    if (minutes === null || minutes === undefined) return 'En curso...'
+    if (minutes === 0) return '0m'
     const hours = Math.floor(minutes / 60)
     const mins = minutes % 60
     return `${hours}h ${mins}m`
