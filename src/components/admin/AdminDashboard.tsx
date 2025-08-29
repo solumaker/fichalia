@@ -13,6 +13,7 @@ import { AllEmployeesTimesheet } from '../AllEmployeesTimesheet'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { AdminTimeTrackingDashboard } from './AdminTimeTrackingDashboard'
+import { ArrowLeft } from 'lucide-react'
 
 export function AdminDashboard() {
   const { profile, signOut } = useAuth()
@@ -162,39 +163,35 @@ export function AdminDashboard() {
 
   return (
     <PageLayout>
-      {/* Mobile-First Header */}
-      <header className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200">
-        <div className="px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            {/* Mobile: Stack vertically, Desktop: Horizontal */}
-            <div className="flex items-center space-x-3 min-w-0 flex-1">
-              <button
-                onClick={backToTimeTracking}
-                className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                <span className="hidden sm:inline">Volver</span>
-              </button>
-              <div className="min-w-0">
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Panel Admin</h2>
-                <p className="text-xs sm:text-sm text-gray-600 truncate">Gestión de usuarios</p>
-              </div>
-            </div>
-            
-            {/* Mobile: Show only icon, Desktop: Show text */}
-            <div className="flex items-center space-x-2 sm:space-x-4">
-              <span className="hidden sm:inline text-sm text-gray-600">Admin: {profile?.full_name}</span>
-              <button
-                onClick={signOut}
-                className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <LogOut className="w-4 h-4 sm:mr-2" />
-                <span className="hidden sm:inline">Cerrar Sesión</span>
-              </button>
+      <Header
+        leftContent={
+          <div className="flex items-center space-x-3 min-w-0 flex-1">
+            <button
+              onClick={backToTimeTracking}
+              className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
+            >
+              <ArrowLeft className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Volver</span>
+            </button>
+            <div className="min-w-0">
+              <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Panel Admin</h2>
+              <p className="text-xs sm:text-sm text-gray-600 truncate">Gestión de usuarios</p>
             </div>
           </div>
-        </div>
-      </header>
+        }
+        rightContent={
+          <div className="flex items-center space-x-2 sm:space-x-4">
+            <span className="hidden sm:inline text-sm text-gray-600">Admin: {profile?.full_name}</span>
+            <button
+              onClick={signOut}
+              className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">Cerrar Sesión</span>
+            </button>
+          </div>
+        }
+      />
 
       <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200">

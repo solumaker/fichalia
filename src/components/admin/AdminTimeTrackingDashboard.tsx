@@ -5,6 +5,7 @@ import { useAuth } from '../../hooks/useAuth'
 import { useGeolocation } from '../../hooks/useGeolocation'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { Header } from '../layout/Header'
 
 interface AdminTimeTrackingDashboardProps {
   onNavigateToUsers: () => void

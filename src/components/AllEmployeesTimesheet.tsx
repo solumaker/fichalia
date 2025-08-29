@@ -3,6 +3,7 @@ import { ArrowLeft, Download, Calendar, Filter, Users, ChevronDown, ChevronUp, S
 import { supabase, Profile, TimeEntry } from '../lib/supabase'
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { Header } from './layout/Header'
 
 interface AllEmployeesTimesheetProps {
   onBack: () => void
