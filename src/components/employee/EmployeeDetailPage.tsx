@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Clock, DollarSign, BarChart3, Phone, Building, Briefcase, Camera, X } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Phone, Building, Briefcase, Camera, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
 import type { UserProfileExtended } from '../../types/shift-management.types'
@@ -17,10 +17,6 @@ import { DatePicker } from '../ui/DatePicker'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { TimeEntriesHistory } from './TimeEntriesHistory'
-import { ShiftSchedule } from '../shifts/ShiftSchedule'
-import { WeeklyShiftScheduler } from '../shifts/WeeklyShiftScheduler'
-import { SalaryConfigComponent } from '../shifts/SalaryConfig'
-import { OvertimeReport } from '../shifts/OvertimeReport'
 
 interface EmployeeDetailPageProps {
   employeeId: string
@@ -345,9 +341,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
 
   const tabs = [
     { id: 'history' as const, label: 'Historial', icon: Calendar },
-    { id: 'shifts' as const, label: 'Turnos', icon: Clock },
-    { id: 'salary' as const, label: 'Salario', icon: DollarSign },
-    { id: 'reports' as const, label: 'Reportes', icon: BarChart3 },
     { id: 'profile' as const, label: 'Perfil', icon: User }
   ]
 
@@ -813,17 +806,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             </div>
           )}
           
-          {activeTab === 'shifts' && employee && (
-            <WeeklyShiftScheduler userId={employee.id} userName={employee.full_name} />
-          )}
-          
-          {activeTab === 'salary' && employee && (
-            <SalaryConfigComponent userId={employee.id} />
-          )}
-          
-          {activeTab === 'reports' && employee && (
-            <OvertimeReport userId={employee.id} />
-          )}
         </div>
       </div>
     </PageLayout>

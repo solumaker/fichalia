@@ -1,16 +1,14 @@
 import React, { useState, useEffect } from 'react'
-import { Clock, MapPin, LogOut, CheckCircle2, AlertCircle, Calendar, Filter, Square, Settings } from 'lucide-react'
+import { Clock, MapPin, LogOut, CheckCircle2, AlertCircle, Calendar, Filter, Square } from 'lucide-react'
 import { supabase, TimeEntry } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useGeolocation } from '../hooks/useGeolocation'
-import { ShiftManagementPage } from './shifts/ShiftManagementPage'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
 export function EmployeeDashboard() {
   const { user, profile, signOut } = useAuth()
   const { getCurrentLocation, loading: geoLoading } = useGeolocation()
-  const [showShiftManagement, setShowShiftManagement] = useState(false)
   const [lastEntry, setLastEntry] = useState<TimeEntry | null>(null)
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([])
   const [loading, setLoading] = useState(false)
@@ -183,9 +181,6 @@ export function EmployeeDashboard() {
   const canCheckIn = !lastEntry || lastEntry.entry_type === 'check_out'
   const canCheckOut = lastEntry && lastEntry.entry_type === 'check_in'
 
-  if (showShiftManagement) {
-    return <ShiftManagementPage onBack={() => setShowShiftManagement(false)} />
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -198,16 +193,9 @@ export function EmployeeDashboard() {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={() => setShowShiftManagement(true)}
-              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Gestión de Turnos"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-            <button
               onClick={signOut}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-              title="Gestión de Turnos"
+              title="Cerrar Sesión"
             >
               <LogOut className="w-5 h-5" />
             </button>
