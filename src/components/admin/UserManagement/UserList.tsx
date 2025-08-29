@@ -103,7 +103,7 @@ export function UserList({
               
               {/* Role and Actions */}
               <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-2 flex-1">
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                     user.role === 'admin' 
                       ? 'bg-purple-100 text-purple-800' 
@@ -121,23 +121,19 @@ export function UserList({
                   </span>
                 </div>
                 
-                {/* Action buttons */}
-                <div className="flex items-center space-x-1">
+                {/* Primary Action Button */}
+                <div className="flex-shrink-0 ml-3">
                   <button
                     onClick={(e) => {
                       e.stopPropagation()
                       handleUserClick(user.id)
                     }}
-                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 active:bg-blue-800 transition-all duration-200 shadow-sm hover:shadow-md"
                     title="Ver detalles"
                   >
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-4 h-4 mr-2" />
+                    Ver
                   </button>
-                  
-                  {user.role === 'employee' && (
-                    <>
-                    </>
-                  )}
                 </div>
               </div>
             </div>
