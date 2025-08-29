@@ -59,7 +59,7 @@ export class ExportUtils {
           format(new Date(pair.checkIn.timestamp), 'dd/MM/yyyy', { locale: es }),
           format(new Date(pair.checkIn.timestamp), 'HH:mm:ss', { locale: es }),
           pair.checkOut ? format(new Date(pair.checkOut.timestamp), 'HH:mm:ss', { locale: es }) : 'Pendiente',
-          TimeEntryUtils.formatDuration(pair.duration),
+          pair.duration !== null ? TimeEntryUtils.formatDuration(pair.duration) : 'En curso',
           pair.checkIn.address || `${pair.checkIn.latitude?.toFixed(4)}, ${pair.checkIn.longitude?.toFixed(4)}` || 'N/A',
           pair.checkOut ? (pair.checkOut.address || `${pair.checkOut.latitude?.toFixed(4)}, ${pair.checkOut.longitude?.toFixed(4)}` || 'N/A') : 'N/A'
         ])
