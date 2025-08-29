@@ -193,7 +193,8 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         full_name: employee.full_name,
         email: employee.email,
         role: employee.role,
-        active: employee.active
+        active: employee.active,
+        profile_image_url: employee.profile_image_url || ''
       })
       setEditError(null)
       setNewPassword('')
@@ -397,6 +398,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
             </div>
           </div>
         </div>
+        </div>
 
         {/* Filters and Summary - Only show for history tab */}
         {activeTab === 'history' && (
@@ -427,21 +429,19 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                     onChange={(value) => setDateRange({ ...dateRange, end: value })}
                   />
                 </div>
-        <div className="px-4 py-3 sm:px-6 lg:px-8 lg:py-4 max-w-7xl mx-auto">
+              </div>
 
-            <div className="min-w-0 flex-1">
+              <div className="flex items-center space-x-2">
                 <Button
                   onClick={exportToCSV}
                   variant="primary"
-                <div className="min-w-0">
+                  size="sm"
                   className="flex-1 sm:flex-none"
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Empleado</h2>
-                  <p className="text-xs sm:text-sm text-gray-600 truncate">Gestión de usuario</p>
-                </div>
-                  className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
+                >
+                  <Download className="w-4 h-4 mr-2" />
                   <span className="hidden sm:inline">Exportar CSV</span>
                   <span className="sm:hidden">Exportar</span>
-            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+                </Button>
               </div>
             </div>
           </div>
@@ -710,16 +710,16 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                         type="submit"
                         disabled={saving}
                         className={`w-full sm:w-auto inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 text-sm ${
+                          saving 
+                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
+                            : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
+                        }`}
                         onClick={(e) => {
                           e.preventDefault()
                           if (window.confirm(`¿Confirmas que quieres guardar los cambios para ${employee.full_name}?`)) {
                             handleEditSubmit(e as any)
                           }
                         }}
-                          saving 
-                            ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
-                            : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'
-                        }`}
                       >
                         {saving && (
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2" />
