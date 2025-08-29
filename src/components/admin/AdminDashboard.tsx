@@ -255,7 +255,8 @@ export function AdminDashboard() {
                 >
                   <FileText className="w-4 h-4 mr-2" />
                   <span className="sm:hidden">Fichajes</span>
-                  <span className="hidden sm:inline">Ver Todos los Fichajes</span>
+                  <span className="sm:hidden">Todos los Fichajes</span>
+                  <span className="hidden sm:inline">Todos los Fichajes</span>
                 </Button>
               </div>
             </div>
