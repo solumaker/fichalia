@@ -503,7 +503,7 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                                   {format(new Date(date), 'EEEE, dd \'de\' MMMM \'de\' yyyy', { locale: es })}
                                 </span>
                                 <span className="sm:hidden">
-                                  {format(new Date(date), 'dd/MM/yyyy', { locale: es })}
+                                  {format(new Date(date), 'dd/MM/yyyy (EEEE)', { locale: es })}
                                 </span>
                               </h3>
                               <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800 flex-shrink-0">
