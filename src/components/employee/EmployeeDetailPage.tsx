@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Camera, X } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Camera, X, Eye, EyeOff } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
 import { UserService } from '../../services/userService'
