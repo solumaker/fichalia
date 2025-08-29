@@ -39,7 +39,7 @@ export function TimeEntriesHistory({ pairedEntries }: TimeEntriesHistoryProps) {
                         <div className="flex items-center">
                           <div className="w-3 h-3 rounded-full bg-green-500 mr-3" />
                           <span className="text-lg font-bold text-green-900">
-                            {TimeEntryUtils.formatTimestamp(pair.checkIn.timestamp)}
+                            {TimeEntryUtils.formatTimestamp(pair.checkIn.timestamp, 'HH:mm')}
                           </span>
                         </div>
                         {pair.checkIn.latitude && pair.checkIn.longitude && (
@@ -64,7 +64,7 @@ export function TimeEntriesHistory({ pairedEntries }: TimeEntriesHistoryProps) {
                             <div className="w-3 h-3 rounded-full bg-red-500 mr-3" />
                             <div>
                               <span className="text-lg font-bold text-red-900">
-                                {TimeEntryUtils.formatTimestamp(pair.checkOut.timestamp)}
+                                {TimeEntryUtils.formatTimestamp(pair.checkOut.timestamp, 'HH:mm')}
                               </span>
                               {pair.isCrossMidnight && (
                                 <div className="text-xs text-red-600 mt-1">
