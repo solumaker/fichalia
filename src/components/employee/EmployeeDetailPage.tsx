@@ -224,6 +224,12 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
       
       // Update password if provided
       if (newPassword.trim()) {
+        if (newPassword !== confirmPassword) {
+          setEditError('Las contraseñas no coinciden')
+          setSaving(false)
+          return
+        }
+        
         try {
           const { data: { session }, error: sessionError } = await supabase.auth.getSession()
           if (sessionError || !session) {
@@ -639,15 +645,49 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                           </button>
                         </div>
                         {showPasswordField && (
-                          <input
-                            type="password"
-                            value={newPassword}
-                            onChange={(e) => setNewPassword(e.target.value)}
-                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="Nueva contraseña (mínimo 6 caracteres)"
-                            minLength={6}
-                            autoComplete="new-password"
-                          />
+                          <div className="space-y-4">
+                            <div className="relative">
+                              <input
+                                type={showPassword ? "text" : "password"}
+                                value={newPassword}
+                                onChange={(e) => setNewPassword(e.target.value)}
+                                className="w-full px-3 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Nueva contraseña (mínimo 6 caracteres)"
+                                minLength={6}
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                              >
+                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                              </button>
+                            </div>
+                            
+                            <div className="relative">
+                              <input
+                                type={showConfirmPassword ? "text" : "password"}
+                                value={confirmPassword}
+                                onChange={(e) => setConfirmPassword(e.target.value)}
+                                className="w-full px-3 py-3 pr-12 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Confirmar nueva contraseña"
+                                minLength={6}
+                                autoComplete="new-password"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors p-1"
+                              >
+                                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                              </button>
+                            </div>
+                            
+                            {newPassword && confirmPassword && newPassword !== confirmPassword && (
+                              <p className="text-red-500 text-sm">Las contraseñas no coinciden</p>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
