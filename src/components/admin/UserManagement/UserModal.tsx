@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Save, Eye, EyeOff } from 'lucide-react'
 import type { Profile, UserFormData } from '../../../types'
 import { Modal } from '../../ui/Modal'
@@ -14,17 +14,18 @@ interface UserModalProps {
 
 export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: UserModalProps) {
   const [formData, setFormData] = useState<UserFormData>({
-    full_name: editingUser?.full_name || '',
-    email: editingUser?.email || '',
-    role: editingUser?.role || 'employee',
+    full_name: '',
+    email: '',
+    role: 'employee',
     password: ''
   })
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [validationError, setValidationError] = useState('')
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (editingUser) {
       setFormData({
         full_name: editingUser.full_name,
@@ -43,29 +44,54 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
     setConfirmPassword('')
     setShowPassword(false)
     setShowConfirmPassword(false)
+    setValidationError('')
   }, [editingUser, isOpen])
+
+  const validateForm = () => {
+    setValidationError('')
+    
+    if (!formData.full_name.trim()) {
+      setValidationError('El nombre completo es requerido')
+      return false
+    }
+    
+    if (!formData.email.trim()) {
+      setValidationError('El correo electrónico es requerido')
+      return false
+    }
+    
+    if (!editingUser) {
+      if (!formData.password.trim()) {
+        setValidationError('La contraseña es requerida para nuevos usuarios')
+        return false
+      }
+      
+      if (formData.password.length < 6) {
+        setValidationError('La contraseña debe tener al menos 6 caracteres')
+        return false
+      }
+      
+      if (formData.password !== confirmPassword) {
+        setValidationError('Las contraseñas no coinciden')
+        return false
+      }
+    }
+    
+    return true
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validation for new users
-    if (!editingUser) {
-      if (!formData.password.trim()) {
-        return
-      }
-      if (formData.password !== confirmPassword) {
-        return
-      }
+    if (!validateForm()) {
+      return
     }
     
     setLoading(true)
     
     try {
       await onSubmit(formData)
-      // Only close modal if submission was successful (no error)
-      if (!error) {
-        onClose()
-      }
+      // Modal will be closed by parent component if successful
     } catch (err) {
       // Error is handled by parent component
     } finally {
@@ -73,12 +99,10 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
     }
   }
 
-  const passwordsMatch = !formData.password || formData.password === confirmPassword
-  const hasPasswordError = !editingUser && formData.password && !passwordsMatch
   const isFormValid = formData.full_name.trim() && 
                      formData.email.trim() && 
                      formData.role && 
-                     (editingUser || (formData.password.trim() && passwordsMatch))
+                     (editingUser || (formData.password.trim() && formData.password === confirmPassword && formData.password.length >= 6))
 
   return (
     <Modal
@@ -87,15 +111,9 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
       title={editingUser ? 'Editar Usuario' : 'Agregar Usuario'}
     >
       <form onSubmit={handleSubmit}>
-        {error && (
+        {(error || validationError) && (
           <div className="mb-4 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
-            {error}
-          </div>
-        )}
-        
-        {hasPasswordError && (
-          <div className="mb-4 p-3 bg-yellow-100 border border-yellow-200 text-yellow-800 rounded-lg text-sm">
-            Las contraseñas no coinciden
+            {error || validationError}
           </div>
         )}
         
@@ -183,7 +201,9 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    hasPasswordError ? 'border-red-300' : 'border-gray-300'
+                    formData.password && confirmPassword && formData.password !== confirmPassword 
+                      ? 'border-red-300' 
+                      : 'border-gray-300'
                   }`}
                   placeholder="••••••••"
                   minLength={6}
@@ -196,6 +216,9 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
                   {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
+              {formData.password && confirmPassword && formData.password !== confirmPassword && (
+                <p className="text-red-500 text-xs mt-1">Las contraseñas no coinciden</p>
+              )}
             </div>
           )}
         </div>
