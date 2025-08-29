@@ -94,22 +94,25 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
 
     // Validate file type
     if (!file.type.startsWith('image/')) {
-      alert('Por favor selecciona un archivo de imagen válido')
+      setEditError('Por favor selecciona un archivo de imagen válido')
       return
     }
 
     // Validate file size (5MB max)
     if (file.size > 5 * 1024 * 1024) {
-      alert('El archivo es demasiado grande. Máximo 5MB permitido.')
+      setEditError('El archivo es demasiado grande. Máximo 5MB permitido.')
       return
     }
 
+    setEditError(null)
+    setSuccess(null)
+    
     // Create preview URL
     const reader = new FileReader()
     reader.onload = (event) => {
       const imageUrl = event.target?.result as string
       setImagePreview(imageUrl)
-      updateProfileImage(imageUrl)
+      setEditFormData(prev => ({ ...prev, profile_image_url: imageUrl }))
     }
     reader.readAsDataURL(file)
   }
