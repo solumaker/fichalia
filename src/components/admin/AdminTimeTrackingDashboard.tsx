@@ -190,15 +190,15 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
 
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-md mx-auto px-4 py-4 flex justify-between items-center">
-          <div>
+      <header className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200">
+        <div className="px-4 py-3 sm:py-4 flex justify-between items-center max-w-md mx-auto">
+          <div className="min-w-0 flex-1">
             <h1 className="text-xl font-bold text-gray-900">Fichalia</h1>
-            <p className="text-sm text-gray-600">Admin: {profile?.full_name}</p>
+            <p className="text-sm text-gray-600 truncate">Admin: {profile?.full_name}</p>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 flex-shrink-0">
             <button
               onClick={signOut}
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -210,7 +210,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
         </div>
       </header>
 
-      <div className="max-w-md mx-auto px-4 py-8">
+      <div className="px-4 py-6 sm:py-8 max-w-md mx-auto">
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-200 text-red-800 rounded-lg flex items-center">
             <AlertCircle className="w-5 h-5 mr-3" />
@@ -220,12 +220,12 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
 
 
         {/* Action Buttons */}
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {canCheckIn && (
             <button
               onClick={() => handleTimeEntry('check_in')}
               disabled={loading || geoLoading}
-              className={`w-full py-6 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center ${
+              className={`w-full py-5 sm:py-6 px-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-all duration-200 flex items-center justify-center ${
                 !loading && !geoLoading
                   ? 'bg-green-500 hover:bg-green-600 text-white shadow-lg hover:shadow-xl active:scale-95'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -240,7 +240,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
             <button
               onClick={() => handleTimeEntry('check_out')}
               disabled={loading || geoLoading}
-              className={`w-full py-6 px-6 rounded-xl font-bold text-lg transition-all duration-200 flex items-center justify-center ${
+              className={`w-full py-5 sm:py-6 px-4 sm:px-6 rounded-xl font-bold text-base sm:text-lg transition-all duration-200 flex items-center justify-center ${
                 !loading && !geoLoading
                   ? 'bg-red-500 hover:bg-red-600 text-white shadow-lg hover:shadow-xl active:scale-95'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
@@ -254,7 +254,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
           {/* Admin Users Button */}
           <button
             onClick={onNavigateToUsers}
-            className="w-full py-4 px-6 rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl active:scale-95"
+            className="w-full py-4 px-4 sm:px-6 rounded-xl font-semibold text-base transition-all duration-200 flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl active:scale-95"
           >
             <Users className="w-5 h-5 mr-3" />
             USUARIOS
@@ -262,10 +262,10 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
         </div>
 
         {/* History Section */}
-        <div className="bg-white rounded-xl shadow-sm border border-gray-200 mt-6">
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 mt-6">
           <div className="p-4 border-b border-gray-200">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                 <Clock className="w-5 h-5 mr-2" />
                 Mis Fichajes
               </h2>
@@ -278,7 +278,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
             </div>
             
             {/* Date Range Filter */}
-            <div className="flex gap-2">
+            <div className="grid grid-cols-2 gap-2">
               <div className="flex-1">
                 <label className="block text-xs text-gray-600 mb-1">Desde</label>
                 <input
@@ -300,16 +300,16 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
             </div>
           </div>
           
-          <div className="p-4 max-h-80 overflow-y-auto">
+          <div className="p-3 sm:p-4 max-h-80 overflow-y-auto">
             {pairedEntries.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
                 <p className="text-sm">No hay fichajes en el rango seleccionado</p>
               </div>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 sm:space-y-3">
                 {pairedEntries.map((pair, index) => (
-                  <div key={`${pair.date}-${index}`} className="p-3 border border-gray-200 rounded-lg">
+                  <div key={`${pair.date}-${index}`} className="p-2 sm:p-3 border border-gray-200 rounded-lg">
                     {/* Date and Duration Header */}
                     <div className="flex items-center justify-between mb-3">
                       <div>
@@ -325,7 +325,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
                     </div>
                     
                     {/* Entry Details */}
-                    <div className="space-y-2">
+                    <div className="space-y-1 sm:space-y-2">
                       {/* Check In */}
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
@@ -343,7 +343,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
                               href={`https://www.google.com/maps/search/?api=1&query=${pair.checkIn.latitude},${pair.checkIn.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="text-xs text-blue-500 hover:text-blue-700 max-w-32 truncate block"
+                              className="text-xs text-blue-500 hover:text-blue-700 truncate block"
                             >
                               <MapPin className="w-3 h-3 inline mr-1" />
                               Ver
@@ -370,7 +370,7 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
                                 href={`https://www.google.com/maps/search/?api=1&query=${pair.checkOut.latitude},${pair.checkOut.longitude}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-xs text-blue-500 hover:text-blue-700 max-w-32 truncate block"
+                                className="text-xs text-blue-500 hover:text-blue-700 truncate block"
                               >
                                 <MapPin className="w-3 h-3 inline mr-1" />
                                 Ver

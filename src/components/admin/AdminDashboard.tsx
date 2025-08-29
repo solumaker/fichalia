@@ -150,10 +150,12 @@ export function AdminDashboard() {
 
   return (
     <PageLayout>
-      <Header
-        leftContent={
-          <div>
-            <div className="flex items-center space-x-3">
+      {/* Mobile-First Header */}
+      <header className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200">
+        <div className="px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            {/* Mobile: Stack vertically, Desktop: Horizontal */}
+            <div className="flex items-center space-x-3 min-w-0 flex-1">
               <button
                 onClick={backToTimeTracking}
                 className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
@@ -161,44 +163,60 @@ export function AdminDashboard() {
                 <ArrowLeft className="w-4 h-4 mr-1" />
                 <span className="hidden sm:inline">Volver</span>
               </button>
+              <div className="min-w-0">
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Panel Admin</h2>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Gestión de usuarios</p>
+              </div>
             </div>
-            <h2 className="text-xl font-semibold text-gray-900">Panel Administrativo</h2>
-            <p className="text-sm text-gray-600">Gestión de fichajes y usuarios</p>
+            
+            {/* Mobile: Show only icon, Desktop: Show text */}
+            <div className="flex items-center space-x-2 sm:space-x-4">
+              <span className="hidden sm:inline text-sm text-gray-600">Admin: {profile?.full_name}</span>
+              <button
+                onClick={signOut}
+                className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <LogOut className="w-4 h-4 sm:mr-2" />
+                <span className="hidden sm:inline">Cerrar Sesión</span>
+              </button>
+            </div>
           </div>
-        }
-        rightContent={
-          <div className="flex items-center space-x-4">
-            <span className="text-sm text-gray-600">Admin: {profile?.full_name}</span>
-            <button
-              onClick={signOut}
-              className="flex items-center px-3 py-2 text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              Cerrar Sesión
-            </button>
-          </div>
-        }
-      />
+        </div>
+      </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200">
-          <div className="p-6 border-b border-gray-200">
-            <div className="flex items-center justify-between">
+          {/* Mobile-optimized header */}
+          <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <h2 className="text-lg font-semibold text-gray-900">Gestión de Usuarios</h2>
-              <div className="flex gap-3">
-                <Button onClick={() => { setEditingUser(null); setShowUserModal(true); }}>
+              
+              {/* Mobile: Stack buttons vertically, Desktop: Horizontal */}
+              <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3">
+                <Button 
+                  onClick={() => { setEditingUser(null); setShowUserModal(true); }}
+                  className="w-full sm:w-auto justify-center"
+                  size="sm"
+                >
                   <Plus className="w-4 h-4 mr-2" />
-                  Agregar Usuario
+                  <span className="sm:hidden">Nuevo Usuario</span>
+                  <span className="hidden sm:inline">Agregar Usuario</span>
                 </Button>
-                <Button variant="success" onClick={viewAllTimesheet}>
+                <Button 
+                  variant="success" 
+                  onClick={viewAllTimesheet}
+                  className="w-full sm:w-auto justify-center"
+                  size="sm"
+                >
                   <FileText className="w-4 h-4 mr-2" />
-                  Ver Todos los Fichajes
+                  <span className="sm:hidden">Fichajes</span>
+                  <span className="hidden sm:inline">Ver Todos los Fichajes</span>
                 </Button>
               </div>
             </div>
           </div>
           
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <UserList
               users={users}
               onViewEmployee={viewEmployeeDetail}

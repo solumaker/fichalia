@@ -340,30 +340,30 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         }
       />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
           <div className="border-b border-gray-200">
-            <div className="flex items-center px-6">
+            <div className="flex flex-col sm:flex-row sm:items-center px-4 sm:px-6">
               {/* Employee Info Section */}
-              <div className="flex items-center space-x-4 py-4 pr-8 border-r border-gray-200">
+              <div className="flex items-center space-x-3 sm:space-x-4 py-4 sm:pr-8 sm:border-r sm:border-gray-200">
                 <div className="relative">
                   {imagePreview ? (
                     <img
                       src={imagePreview}
                       alt={employee.full_name}
-                      className="w-16 h-16 rounded-full object-cover border-2 border-gray-200"
+                      className="w-12 h-12 sm:w-16 sm:h-16 rounded-full object-cover border-2 border-gray-200"
                       onError={handleImageError}
                     />
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
-                      <User className="w-8 h-8 text-gray-400" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-gray-100 border-2 border-gray-200 flex items-center justify-center">
+                      <User className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                     </div>
                   )}
                 </div>
                 <div className="min-w-0">
-                  <h3 className="text-lg font-semibold text-gray-900 truncate">{employee.full_name}</h3>
-                  <p className="text-sm text-gray-600 truncate">{employee.email}</p>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{employee.full_name}</h3>
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">{employee.email}</p>
                   <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium mt-1 ${
                     employee.active 
                       ? 'bg-green-100 text-green-700' 
@@ -374,15 +374,15 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                 </div>
               </div>
               
-              {/* Tab Navigation */}
-              <nav className="flex space-x-8 flex-1 pl-8" aria-label="Tabs">
+              <div className="flex gap-2 w-full sm:w-auto">
+              <nav className="flex space-x-4 sm:space-x-8 flex-1 sm:pl-8 py-2 sm:py-0 overflow-x-auto" aria-label="Tabs">
                 {tabs.map((tab) => {
                   const Icon = tab.icon
                   return (
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors ${
+                      className={`py-2 sm:py-4 px-1 border-b-2 font-medium text-sm flex items-center transition-colors whitespace-nowrap ${
                         activeTab === tab.id
                           ? 'border-blue-500 text-blue-600'
                           : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
@@ -400,10 +400,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
 
         {/* Filters and Summary - Only show for history tab */}
         {activeTab === 'history' && (
-          <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
-            <div className="flex flex-wrap items-center gap-4 justify-between">
-              <div className="flex flex-wrap items-center gap-4">
-                <div className="flex gap-2">
+          <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 mb-8">
+            <div className="space-y-4 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-4 sm:justify-between">
+              <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
+                <div className="flex flex-wrap gap-2">
                   <Button variant="secondary" size="sm" onClick={() => setPresetDateRange('today')}>
                     Hoy
                   </Button>
@@ -415,7 +415,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                   </Button>
                 </div>
                 
-                <div className="flex gap-4">
+                <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-4">
                   <DatePicker
                     label="Desde"
                     value={dateRange.start}
@@ -427,17 +427,21 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                     onChange={(value) => setDateRange({ ...dateRange, end: value })}
                   />
                 </div>
-              </div>
+        <div className="px-4 py-3 sm:px-6 lg:px-8 lg:py-4 max-w-7xl mx-auto">
 
-              <div className="flex gap-2">
+            <div className="min-w-0 flex-1">
                 <Button
                   onClick={exportToCSV}
                   variant="primary"
-                  size="sm"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Exportar CSV
-                </Button>
+                <div className="min-w-0">
+                  className="flex-1 sm:flex-none"
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">Empleado</h2>
+                  <p className="text-xs sm:text-sm text-gray-600 truncate">Gestión de usuario</p>
+                </div>
+                  className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors flex-shrink-0"
+                  <span className="hidden sm:inline">Exportar CSV</span>
+                  <span className="sm:hidden">Exportar</span>
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
               </div>
             </div>
           </div>
@@ -448,10 +452,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           {activeTab === 'history' && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900">Historial de Fichajes</h2>
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900">Historial de Fichajes</h2>
               </div>
               
-              <div className="p-6">
+              <div className="p-4 sm:p-6">
                 {pairedEntries.length === 0 ? (
                   <div className="text-center py-12 text-gray-500">
                     <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
@@ -468,7 +472,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           {activeTab === 'profile' && employee && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
               <div className="p-6 border-b border-gray-200">
-                <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
                   <Edit className="w-5 h-5 mr-2" />
                   Gestión de Usuario
                 </h2>
@@ -498,7 +502,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                 )}
                 
                 {/* Professional Form Layout */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-6 lg:mb-8">
                   {/* Profile Image Section - Left Column */}
                   <div className="lg:col-span-1">
                     <div className="text-center">
@@ -507,12 +511,12 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                           <img
                             src={imagePreview}
                             alt="Profile"
-                            className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                            className="w-24 h-24 sm:w-32 sm:h-32 rounded-full object-cover border-4 border-gray-200"
                             onError={handleImageError}
                           />
                         ) : (
-                          <div className="w-32 h-32 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center">
-                            <User className="w-12 h-12 text-gray-400" />
+                          <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center">
+                            <User className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400" />
                           </div>
                         )}
                         <div className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 cursor-pointer hover:bg-blue-600 transition-colors">
@@ -562,7 +566,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
 
                   {/* Form Fields - Two Columns */}
                   <div className="lg:col-span-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                       {/* Required Fields */}
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -615,7 +619,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                       {/* Optional Fields */}
 
                       {/* Password Change Button */}
-                      <div className="md:col-span-2">
+                      <div className="sm:col-span-2">
                         <div className="flex items-center justify-between mb-3">
                           <label className="block text-sm font-medium text-gray-700">
                             Contraseña
@@ -655,8 +659,8 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                 </div>
                 
                 <div className="pt-6 border-t border-gray-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
+                  <div className="space-y-4 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                       <span className="text-sm font-medium text-gray-700">Estado del usuario:</span>
                       <button
                         type="button"
@@ -674,11 +678,12 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                       </button>
                     </div>
                     
-                    <div className="flex space-x-3">
+                    <div className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3">
                       <Button
                         type="button"
                         variant="danger"
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => {
                           if (window.confirm(`¿Estás seguro de que quieres ${editFormData.active ? 'desactivar' : 'activar'} a ${employee.full_name}?`)) {
                             toggleUserStatus()
@@ -691,6 +696,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                         type="button"
                         variant="danger"
                         size="sm"
+                        className="w-full sm:w-auto"
                         onClick={() => {
                           if (window.confirm(`¿Estás seguro de que quieres eliminar permanentemente a ${employee.full_name}? Esta acción no se puede deshacer.`)) {
                             deleteUser()
@@ -703,13 +709,13 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                       <button
                         type="submit"
                         disabled={saving}
+                        className={`w-full sm:w-auto inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 text-sm ${
                         onClick={(e) => {
                           e.preventDefault()
                           if (window.confirm(`¿Confirmas que quieres guardar los cambios para ${employee.full_name}?`)) {
                             handleEditSubmit(e as any)
                           }
                         }}
-                        className={`inline-flex items-center justify-center font-medium rounded-lg transition-all duration-200 focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2 text-sm ${
                           saving 
                             ? 'bg-gray-400 text-gray-200 cursor-not-allowed' 
                             : 'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500'

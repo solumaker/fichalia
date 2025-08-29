@@ -322,39 +322,43 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-indigo-100">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+      <header className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200">
+        <div className="px-4 py-3 sm:px-6 lg:px-8 lg:py-4 max-w-7xl mx-auto">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center min-w-0 flex-1">
               <button
                 onClick={onBack}
-                className="flex items-center px-3 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md mr-4"
+                className="flex items-center px-2 py-1.5 sm:px-3 sm:py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md mr-3 sm:mr-4 flex-shrink-0"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" />
-                Volver
+                <span className="hidden sm:inline">Volver</span>
               </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">Fichajes de Todos los Empleados</h1>
-                <p className="text-sm text-gray-600">Vista consolidada de fichajes por empleado</p>
+              <div className="min-w-0">
+                <h1 className="text-lg sm:text-2xl font-bold text-gray-900 truncate">
+                  <span className="hidden sm:inline">Fichajes de Todos los Empleados</span>
+                  <span className="sm:hidden">Todos los Fichajes</span>
+                </h1>
+                <p className="text-xs sm:text-sm text-gray-600 truncate">Vista consolidada por empleado</p>
               </div>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
                 <Users className="w-4 h-4 mr-2" />
-                {employeeData.length} empleados
+                <span className="hidden sm:inline">{employeeData.length} empleados</span>
+                <span className="sm:hidden">{employeeData.length}</span>
               </span>
             </div>
           </div>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
         {/* Filters */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-200 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
-            <div className="flex flex-wrap items-center gap-4">
+        <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 mb-6 sm:mb-8">
+          <div className="space-y-4 lg:space-y-0 lg:flex lg:gap-4 lg:items-center lg:justify-between">
+            <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                 <input
@@ -362,11 +366,11 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                   placeholder="Buscar empleado..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-64"
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 w-full sm:w-64"
                 />
               </div>
               
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => setPresetDateRange('today')}
                   className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
@@ -387,7 +391,7 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                 </button>
               </div>
               
-              <div className="flex gap-4">
+              <div className="grid grid-cols-2 gap-3 sm:flex sm:gap-4">
                 <div>
                   <label className="block text-sm text-gray-600 mb-1">Desde</label>
                   <input
@@ -412,17 +416,18 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
             <button
               onClick={exportToCSV}
               disabled={employeeData.length === 0}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+              className="w-full sm:w-auto flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
             >
               <Download className="w-4 h-4 mr-2" />
-              Exportar CSV
+              <span className="hidden sm:inline">Exportar CSV</span>
+              <span className="sm:hidden">Exportar</span>
             </button>
           </div>
         </div>
 
         {/* Employee Time Entries */}
         {employeeData.length === 0 ? (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-12">
+          <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200 p-8 sm:p-12">
             <div className="text-center text-gray-500">
               <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p className="text-lg mb-2">No se encontraron empleados</p>
@@ -430,7 +435,7 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
             {employeeData.map(({ employee, pairedEntries }) => {
               // Group pairs by date for this employee
               const groupedByDate = pairedEntries.reduce((acc, pair) => {
@@ -445,18 +450,18 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
               const totalDuration = pairedEntries.reduce((total, pair) => total + (pair.duration || 0), 0)
               
               return (
-                <div key={employee.id} className="bg-white rounded-xl shadow-sm border border-gray-200">
+                <div key={employee.id} className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200">
                   {/* Employee Header */}
                   <div 
-                    className="p-6 border-b border-gray-200 bg-gray-50 cursor-pointer hover:bg-gray-100 transition-colors"
+                    className="p-4 sm:p-6 border-b border-gray-200 bg-gray-50/80 cursor-pointer hover:bg-gray-100/80 transition-colors"
                     onClick={() => toggleEmployeeExpansion(employee.id)}
                   >
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h2 className="text-xl font-semibold text-gray-900">{employee.full_name}</h2>
-                        <p className="text-sm text-gray-600">{employee.email}</p>
+                      <div className="min-w-0 flex-1 mr-4">
+                        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 truncate">{employee.full_name}</h2>
+                        <p className="text-xs sm:text-sm text-gray-600 truncate">{employee.email}</p>
                       </div>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                         {pairedEntries.length > 0 ? (
                           <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
                             {formatTotalDuration(totalDuration)}
@@ -477,7 +482,7 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
 
                   {/* Time Entries by Date */}
                   {isExpanded && (
-                    <div className="p-6 space-y-6">
+                    <div className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                       {pairedEntries.length === 0 ? (
                         <div className="text-center py-8 text-gray-500">
                           <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -490,25 +495,30 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                         return (
                           <div key={date} className="border border-gray-200 rounded-lg">
                             {/* Day Header */}
-                            <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                              <h3 className="text-lg font-semibold text-gray-900">
-                                {format(new Date(date), 'EEEE, dd \'de\' MMMM \'de\' yyyy', { locale: es })}
+                            <div className="bg-gray-50/80 px-3 sm:px-4 py-2 sm:py-3 border-b border-gray-200 flex items-center justify-between">
+                              <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate mr-2">
+                                <span className="hidden sm:inline">
+                                  {format(new Date(date), 'EEEE, dd \'de\' MMMM \'de\' yyyy', { locale: es })}
+                                </span>
+                                <span className="sm:hidden">
+                                  {format(new Date(date), 'dd/MM/yyyy', { locale: es })}
+                                </span>
                               </h3>
-                              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                              <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800 flex-shrink-0">
                                 {formatTotalDuration(dailyDuration)}
                               </span>
                             </div>
                             
                             {/* Day Entries */}
-                            <div className="p-4 space-y-3">
+                            <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                               {dayPairs.map((pair, pairIndex) => (
-                                <div key={pairIndex} className="flex items-center gap-3">
-                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
+                                <div key={pairIndex} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 flex-1">
                                     {/* Check In */}
-                                    <div className="bg-green-50 rounded-lg p-3 flex items-center justify-between">
+                                    <div className="bg-green-50 rounded-lg p-2 sm:p-3 flex items-center justify-between">
                                       <div className="flex items-center">
                                         <div className="w-3 h-3 rounded-full bg-green-500 mr-3" />
-                                        <span className="text-lg font-bold text-green-900">
+                                        <span className="text-base sm:text-lg font-bold text-green-900">
                                           {format(new Date(pair.checkIn.timestamp), 'HH:mm', { locale: es })}
                                         </span>
                                       </div>
@@ -527,11 +537,11 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                                     
                                     {/* Check Out */}
                                     {pair.checkOut ? (
-                                      <div className="bg-red-50 rounded-lg p-3 flex items-center justify-between">
+                                      <div className="bg-red-50 rounded-lg p-2 sm:p-3 flex items-center justify-between">
                                         <div className="flex items-center">
                                           <div className="w-3 h-3 rounded-full bg-red-500 mr-3" />
                                           <div>
-                                            <span className="text-lg font-bold text-red-900">
+                                            <span className="text-base sm:text-lg font-bold text-red-900">
                                               {format(new Date(pair.checkOut.timestamp), 'HH:mm', { locale: es })}
                                             </span>
                                             {pair.isCrossMidnight && (
@@ -554,7 +564,7 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                                         )}
                                       </div>
                                     ) : (
-                                      <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-center">
+                                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3 flex items-center justify-center">
                                         <div className="text-center text-gray-500">
                                           <div className="w-3 h-3 rounded-full bg-gray-400 mx-auto mb-2" />
                                           <p className="text-sm">Salida pendiente</p>
@@ -564,8 +574,8 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                                   </div>
                                   
                                   {/* Duration for this pair */}
-                                  <div className="flex-shrink-0">
-                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                  <div className="flex-shrink-0 self-start sm:self-center">
+                                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
                                       {formatDuration(pair.duration)}
                                     </span>
                                   </div>
