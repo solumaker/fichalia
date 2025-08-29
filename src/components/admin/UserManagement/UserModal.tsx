@@ -294,22 +294,6 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
           )}
         </div>
         
-        {/* Debug Info - Remove in production */}
-        <div className="mt-4 p-3 bg-gray-50 rounded-lg text-xs text-gray-600">
-          <p><strong>Debug Info:</strong></p>
-          <p>Form Valid: {formValid ? '✅' : '❌'}</p>
-          <p>Loading: {loading ? '✅' : '❌'}</p>
-          <p>Name: {formData.full_name ? '✅' : '❌'}</p>
-          <p>Email: {formData.email ? '✅' : '❌'}</p>
-          {!editingUser && (
-            <>
-              <p>Password: {formData.password && formData.password.length >= 6 ? '✅' : '❌'}</p>
-              <p>Confirm: {confirmPassword ? '✅' : '❌'}</p>
-              <p>Match: {formData.password === confirmPassword ? '✅' : '❌'}</p>
-            </>
-          )}
-        </div>
-        
         {/* Form Actions */}
         <div className="flex justify-end space-x-3 mt-6">
           <Button variant="secondary" onClick={onClose} disabled={loading}>
