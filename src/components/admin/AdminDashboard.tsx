@@ -13,7 +13,6 @@ import { AllEmployeesTimesheet } from '../AllEmployeesTimesheet'
 import { Button } from '../ui/Button'
 import { LoadingSpinner } from '../ui/LoadingSpinner'
 import { AdminTimeTrackingDashboard } from './AdminTimeTrackingDashboard'
-import { ArrowLeft } from 'lucide-react'
 
 export function AdminDashboard() {
   const { profile, signOut } = useAuth()
