@@ -344,6 +344,12 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
       </header>
 
       <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
+        {/* Page Title Section */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Perfil de Empleado</h1>
+          <p className="text-gray-600">Información detallada y gestión del empleado</p>
+        </div>
+
         {/* Tab Navigation */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-8">
           <div className="border-b border-gray-200">

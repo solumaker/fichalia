@@ -356,8 +356,15 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
       </header>
 
       <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
+        {/* Page Title Section */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Registro de Fichajes</h1>
+          <p className="text-gray-600">Vista consolidada de todos los fichajes por empleado</p>
+        </div>
+
         {/* Filters */}
         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm p-4 sm:p-6 border border-gray-200 mb-6 sm:mb-8">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Filtros y Búsqueda</h2>
           <div className="space-y-4 lg:space-y-0 lg:flex lg:gap-4 lg:items-center lg:justify-between">
             <div className="space-y-3 sm:space-y-0 sm:flex sm:flex-wrap sm:items-center sm:gap-4">
               <div className="relative">

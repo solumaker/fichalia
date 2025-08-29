@@ -193,11 +193,17 @@ export function AdminDashboard() {
       />
 
       <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
+        {/* Page Title Section */}
+        <div className="mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Panel de Administración</h1>
+          <p className="text-gray-600">Gestiona usuarios, roles y permisos del sistema</p>
+        </div>
+
         <div className="bg-white/95 backdrop-blur-sm rounded-xl shadow-sm border border-gray-200">
           {/* Mobile-optimized header */}
           <div className="p-4 sm:p-6 border-b border-gray-200">
             <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
-              <h2 className="text-lg font-semibold text-gray-900">Gestión de Usuarios</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Lista de Usuarios</h2>
               
               {/* Status Filter */}
               <div className="flex items-center space-x-2 sm:order-first sm:mr-4">

@@ -207,6 +207,11 @@ export function EmployeeDashboard() {
       </header>
 
       <div className="max-w-md mx-auto px-4 py-8">
+        {/* Page Title Section */}
+        <div className="mb-6 text-center">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Control de Fichajes</h1>
+          <p className="text-sm text-gray-600">Registra tu entrada y salida del trabajo</p>
+        </div>
 
         {/* Action Buttons */}
         <div className="space-y-4">
