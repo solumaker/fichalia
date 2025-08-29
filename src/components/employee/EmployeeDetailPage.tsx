@@ -615,6 +615,41 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                       {/* Optional Fields */}
 
                       {/* Password Change Button */}
+                      <div className="sm:col-span-2">
+                        <div className="flex items-center justify-between mb-3">
+                          <label className="block text-sm font-medium text-gray-700">
+                            Contraseña
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setShowPasswordField(!showPasswordField)}
+                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-blue-600 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 hover:border-blue-300 transition-colors"
+                          >
+                            {showPasswordField ? (
+                              <>
+                                <X className="w-4 h-4 mr-1" />
+                                Cancelar
+                              </>
+                            ) : (
+                              <>
+                                <Edit className="w-4 h-4 mr-1" />
+                                Cambiar contraseña
+                              </>
+                            )}
+                          </button>
+                        </div>
+                        {showPasswordField && (
+                          <input
+                            type="password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="Nueva contraseña (mínimo 6 caracteres)"
+                            minLength={6}
+                            autoComplete="new-password"
+                          />
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
