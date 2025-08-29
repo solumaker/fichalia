@@ -513,7 +513,15 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                             {/* Day Entries */}
                             <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                               {dayPairs.map((pair, pairIndex) => (
-                                <div key={pairIndex} className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+                                <div key={pairIndex} className="space-y-2">
+                                  {/* Duration badge - positioned at top right */}
+                                  <div className="flex justify-end">
+                                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
+                                      {formatDuration(pair.duration)}
+                                    </span>
+                                  </div>
+                                  
+                                  {/* Time entries */}
                                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 flex-1">
                                     {/* Check In */}
                                     <div className="bg-green-50 rounded-lg p-2 sm:p-3 flex items-center justify-between">
@@ -572,13 +580,6 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                                         </div>
                                       </div>
                                     )}
-                                  </div>
-                                  
-                                  {/* Duration for this pair */}
-                                  <div className="flex-shrink-0 self-start sm:self-center">
-                                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
-                                      {formatDuration(pair.duration)}
-                                    </span>
                                   </div>
                                 </div>
                               ))}
