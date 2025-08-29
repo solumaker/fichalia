@@ -205,34 +205,34 @@ export function AdminDashboard() {
               
               {/* Status Filter */}
               <div className="flex items-center space-x-2 sm:order-first sm:mr-4">
-                <span className="text-sm font-medium text-gray-700">Mostrar:</span>
-                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                <span className="text-xs text-gray-500">Filtrar:</span>
+                <div className="flex rounded-md overflow-hidden bg-gray-50 border border-gray-200">
                   <button
                     onClick={() => setStatusFilter('active')}
-                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                    className={`px-2 py-1 text-xs font-medium transition-colors ${
                       statusFilter === 'active'
-                        ? 'bg-green-100 text-green-800 border-green-300'
-                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                        ? 'bg-white text-gray-800 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     Activos ({users.filter(u => u.active).length})
                   </button>
                   <button
                     onClick={() => setStatusFilter('inactive')}
-                    className={`px-3 py-1.5 text-sm font-medium border-l transition-colors ${
+                    className={`px-2 py-1 text-xs font-medium transition-colors ${
                       statusFilter === 'inactive'
-                        ? 'bg-red-100 text-red-800 border-red-300'
-                        : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'
+                        ? 'bg-white text-gray-800 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     Inactivos ({users.filter(u => !u.active).length})
                   </button>
                   <button
                     onClick={() => setStatusFilter('all')}
-                    className={`px-3 py-1.5 text-sm font-medium border-l transition-colors ${
+                    className={`px-2 py-1 text-xs font-medium transition-colors ${
                       statusFilter === 'all'
-                        ? 'bg-blue-100 text-blue-800 border-blue-300'
-                        : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'
+                        ? 'bg-white text-gray-800 shadow-sm'
+                        : 'text-gray-500 hover:text-gray-700'
                     }`}
                   >
                     Todos ({users.length})
