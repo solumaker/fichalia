@@ -16,6 +16,7 @@ export interface UpdateUserRequest {
   email?: string
   role?: 'employee' | 'admin'
   active?: boolean
+  profile_image_url?: string
 }
 
 export interface TimeEntriesQuery {

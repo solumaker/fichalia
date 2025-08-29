@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Camera, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
-import type { UserProfileExtended } from '../../types/shift-management.types'
 import { UserService } from '../../services/userService'
-import { ShiftManagementService } from '../../services/shiftManagementService'
 import { TimeEntryService } from '../../services/timeEntryService'
 import { TimeEntryUtils } from '../../utils/timeEntryUtils'
 import { DateUtils } from '../../utils/dateUtils'
@@ -37,13 +35,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   const [showPasswordField, setShowPasswordField] = useState(false)
   const [activeTab, setActiveTab] = useState<'history' | 'profile' | 'shifts' | 'salary' | 'reports'>('history')
   const [editError, setEditError] = useState<string | null>(null)
-  const [profile, setProfile] = useState<Partial<UserProfileExtended>>({
-    profile_image_url: '',
-    phone: '',
-    department: '',
-    position: '',
-    hire_date: ''
-  })
   const [imagePreview, setImagePreview] = useState<string>('')
   const [success, setSuccess] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
@@ -51,7 +42,8 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
     full_name: '',
     email: '',
     role: 'employee' as 'employee' | 'admin',
-    active: true
+    active: true,
+    profile_image_url: ''
   })
 
   useEffect(() => {
@@ -61,13 +53,14 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   useEffect(() => {
     if (employee) {
       loadTimeEntries()
-      loadProfile()
       setEditFormData({
         full_name: employee.full_name,
         email: employee.email,
         role: employee.role,
-        active: employee.active
+        active: employee.active,
+        profile_image_url: employee.profile_image_url || ''
       })
+      setImagePreview(employee.profile_image_url || '')
     }
   }, [dateRange, employee])
 
@@ -85,27 +78,10 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
     setLoading(false)
   }
 
-  const loadProfile = async () => {
-    if (!employee) return
-    
-    try {
-      const existingProfile = await ShiftManagementService.getExtendedProfile(employee.id)
-      if (existingProfile) {
-        setProfile(existingProfile)
-        setImagePreview(existingProfile.profile_image_url || '')
-      }
-    } catch (error) {
-      console.error('Error loading extended profile:', error)
-    }
-  }
-
-  const updateProfile = (field: keyof UserProfileExtended, value: string) => {
-    setProfile(prev => ({ ...prev, [field]: value }))
+  const updateProfileImage = (value: string) => {
+    setEditFormData(prev => ({ ...prev, profile_image_url: value }))
     setSuccess(null)
-    
-    if (field === 'profile_image_url') {
-      setImagePreview(value)
-    }
+    setImagePreview(value)
   }
 
   const handleImageError = () => {
@@ -133,7 +109,7 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
     reader.onload = (event) => {
       const imageUrl = event.target?.result as string
       setImagePreview(imageUrl)
-      updateProfile('profile_image_url', imageUrl)
+      updateProfileImage(imageUrl)
     }
     reader.readAsDataURL(file)
   }
@@ -236,12 +212,9 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
         full_name: editFormData.full_name,
         email: editFormData.email,
         role: editFormData.role,
-        active: editFormData.active
+        active: editFormData.active,
+        profile_image_url: editFormData.profile_image_url
       })
-      
-      // Save extended profile (including image)
-      await ShiftManagementService.updateExtendedProfile(employee.id, profile)
-      
       setSuccess('✅ Cambios guardados correctamente')
       await loadEmployeeData()
       
@@ -550,8 +523,8 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                         </label>
                         <input
                           type="url"
-                          value={profile.profile_image_url?.startsWith('data:') ? '' : (profile.profile_image_url || '')}
-                          onChange={(e) => updateProfile('profile_image_url', e.target.value)}
+                          value={editFormData.profile_image_url?.startsWith('data:') ? '' : (editFormData.profile_image_url || '')}
+                          onChange={(e) => updateProfileImage(e.target.value)}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                           placeholder="https://ejemplo.com/imagen.jpg"
                         />

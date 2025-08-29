@@ -5,6 +5,7 @@ export interface Profile {
   role: 'employee' | 'admin'
   active: boolean
   created_at: string
+  profile_image_url?: string
 }
 
 export interface TimeEntry {
