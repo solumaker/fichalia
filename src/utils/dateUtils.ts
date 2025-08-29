@@ -45,7 +45,7 @@ export class DateUtils {
   }
 
   static formatDisplayDate(date: string | Date): string {
-    return format(new Date(date), 'EEEE, dd \'de\' MMMM \'de\' yyyy', { locale: es })
+    return format(new Date(date), 'dd/MM/yyyy (EEEE)', { locale: es })
   }
 
   static formatShortDate(date: string | Date): string {
