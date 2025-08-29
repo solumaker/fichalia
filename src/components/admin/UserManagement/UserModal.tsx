@@ -48,19 +48,21 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!editingUser && !formData.password.trim()) {
-      return // Don't submit if creating new user without password
-    }
-    
-    if (!editingUser && formData.password !== confirmPassword) {
-      return // Don't submit if passwords don't match
+    // Validation for new users
+    if (!editingUser) {
+      if (!formData.password.trim()) {
+        return
+      }
+      if (formData.password !== confirmPassword) {
+        return
+      }
     }
     
     setLoading(true)
     
     try {
       await onSubmit(formData)
-      // Only close modal if submission was successful
+      // Only close modal if submission was successful (no error)
       if (!error) {
         onClose()
       }
@@ -72,8 +74,12 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
   }
 
   const passwordsMatch = !formData.password || formData.password === confirmPassword
-  const isFormValid = formData.full_name && formData.email && formData.role && 
-    (editingUser || (formData.password && passwordsMatch))
+  const hasPasswordError = !editingUser && formData.password && !passwordsMatch
+  const isFormValid = formData.full_name.trim() && 
+                     formData.email.trim() && 
+                     formData.role && 
+                     (editingUser || (formData.password.trim() && passwordsMatch))
+
   return (
     <Modal
       isOpen={isOpen}
@@ -87,7 +93,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
           </div>
         )}
         
-        {!passwordsMatch && confirmPassword && (
+        {hasPasswordError && (
           <div className="mb-4 p-3 bg-yellow-100 border border-yellow-200 text-yellow-800 rounded-lg text-sm">
             Las contraseñas no coinciden
           </div>
@@ -96,6 +102,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
         <div className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="text-red-500 mr-1">*</span>
               Nombre completo
             </label>
             <input
@@ -110,6 +117,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="text-red-500 mr-1">*</span>
               Correo electrónico
             </label>
             <input
@@ -124,6 +132,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              <span className="text-red-500 mr-1">*</span>
               Rol
             </label>
             <select
@@ -138,6 +147,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
+              {!editingUser && <span className="text-red-500 mr-1">*</span>}
               Contraseña {editingUser && '(dejar vacío para mantener actual)'}
             </label>
             <div className="relative">
@@ -163,6 +173,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
           {!editingUser && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
+                <span className="text-red-500 mr-1">*</span>
                 Confirmar contraseña
               </label>
               <div className="relative">
@@ -172,7 +183,7 @@ export function UserModal({ isOpen, onClose, onSubmit, editingUser, error }: Use
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                    !passwordsMatch && confirmPassword ? 'border-red-300' : 'border-gray-300'
+                    hasPasswordError ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="••••••••"
                   minLength={6}
