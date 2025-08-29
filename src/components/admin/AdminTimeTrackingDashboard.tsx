@@ -212,12 +212,6 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
       </header>
 
       <div className="px-4 py-6 sm:py-8 max-w-md mx-auto">
-        {/* Page Title Section */}
-        <div className="mb-6 text-center">
-          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 mb-2">Control de Fichajes</h1>
-          <p className="text-sm text-gray-600">Registra tu entrada y salida del trabajo</p>
-        </div>
-
         {error && (
           <div className="mb-6 p-4 bg-red-100 border border-red-200 text-red-800 rounded-lg flex items-center">
             <AlertCircle className="w-5 h-5 mr-3" />
