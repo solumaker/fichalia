@@ -274,7 +274,6 @@ export function AdminTimeTrackingDashboard({ onNavigateToUsers }: AdminTimeTrack
                 <span className="text-xs font-medium text-blue-600 bg-blue-50 px-2 py-1 rounded-lg">
                   Total: {formatTotalDuration(totalDuration)}
                 </span>
-                <Filter className="w-5 h-5 text-gray-400" />
               </div>
             </div>
             
