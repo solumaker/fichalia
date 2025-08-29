@@ -50,7 +50,7 @@ export function TimeEntriesHistory({ pairedEntries }: TimeEntriesHistoryProps) {
                             className="text-sm text-green-700 hover:text-green-800 flex items-center"
                           >
                             <MapPin className="w-4 h-4 mr-1" />
-                            Ver
+                            Ubicación
                           </a>
                         )}
                       </div>
@@ -81,7 +81,7 @@ export function TimeEntriesHistory({ pairedEntries }: TimeEntriesHistoryProps) {
                               className="text-sm text-red-700 hover:text-red-800 flex items-center"
                             >
                               <MapPin className="w-4 h-4 mr-1" />
-                              Ver
+                              Ubicación
                             </a>
                           )}
                         </div>
