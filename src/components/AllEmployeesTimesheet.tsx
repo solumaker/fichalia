@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Filter, Users, ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Filter, Users, ChevronDown, ChevronUp, Search, MapPin } from 'lucide-react'
 import { supabase, Profile, TimeEntry } from '../lib/supabase'
 import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -514,73 +514,78 @@ export function AllEmployeesTimesheet({ onBack }: AllEmployeesTimesheetProps) {
                             {/* Day Entries */}
                             <div className="p-3 sm:p-4 space-y-2 sm:space-y-3">
                               {dayPairs.map((pair, pairIndex) => (
-                                <div key={pairIndex} className="space-y-2">
-                                  {/* Duration badge - positioned at top right */}
-                                  <div className="flex justify-end">
-                                    <span className="inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-medium bg-blue-100 text-blue-800">
-                                      {formatDuration(pair.duration)}
-                                    </span>
-                                  </div>
-                                  
-                                  {/* Time entries */}
-                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 flex-1">
+                                <div key={pairIndex} className="flex items-center gap-3">
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 flex-1">
                                     {/* Check In */}
-                                    <div className="bg-green-50 rounded-lg p-2 sm:p-3 flex items-center justify-between">
-                                      <div className="flex items-center">
-                                        <div className="w-3 h-3 rounded-full bg-green-500 mr-3" />
-                                        <span className="text-base sm:text-lg font-bold text-green-900">
-                                          {format(new Date(pair.checkIn.timestamp), 'HH:mm', { locale: es })}
-                                        </span>
+                                    <div className="bg-green-50 rounded-lg p-3">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center">
+                                          <div className="w-3 h-3 rounded-full bg-green-500 mr-3" />
+                                          <span className="text-lg font-bold text-green-900">
+                                            {format(new Date(pair.checkIn.timestamp), 'HH:mm', { locale: es })}
+                                          </span>
+                                        </div>
+                                        {pair.checkIn.latitude && pair.checkIn.longitude && (
+                                          <a 
+                                            href={`https://www.google.com/maps/search/?api=1&query=${pair.checkIn.latitude},${pair.checkIn.longitude}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-sm text-green-700 hover:text-green-800 flex items-center"
+                                            onClick={(e) => e.stopPropagation()}
+                                          >
+                                            <MapPin className="w-4 h-4 mr-1" />
+                                            Ubicación
+                                          </a>
+                                        )}
                                       </div>
-                                      {pair.checkIn.latitude && pair.checkIn.longitude && (
-                                        <a 
-                                          href={`https://www.google.com/maps/search/?api=1&query=${pair.checkIn.latitude},${pair.checkIn.longitude}`}
-                                          target="_blank"
-                                          rel="noopener noreferrer"
-                                          className="text-sm text-green-700 hover:text-green-800 flex items-center"
-                                          onClick={(e) => e.stopPropagation()}
-                                        >
-                                          Ver
-                                        </a>
-                                      )}
                                     </div>
                                     
                                     {/* Check Out */}
                                     {pair.checkOut ? (
-                                      <div className="bg-red-50 rounded-lg p-2 sm:p-3 flex items-center justify-between">
-                                        <div className="flex items-center">
-                                          <div className="w-3 h-3 rounded-full bg-red-500 mr-3" />
-                                          <div>
-                                            <span className="text-base sm:text-lg font-bold text-red-900">
-                                              {format(new Date(pair.checkOut.timestamp), 'HH:mm', { locale: es })}
-                                            </span>
-                                            {pair.isCrossMidnight && (
-                                              <div className="text-xs text-red-600 mt-1">
-                                               {format(new Date(pair.checkOut.timestamp), 'dd/MM/yyyy', { locale: es })}
-                                              </div>
-                                            )}
+                                      <div className="bg-red-50 rounded-lg p-3">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center">
+                                            <div className="w-3 h-3 rounded-full bg-red-500 mr-3" />
+                                            <div>
+                                              <span className="text-lg font-bold text-red-900">
+                                                {format(new Date(pair.checkOut.timestamp), 'HH:mm', { locale: es })}
+                                              </span>
+                                              {pair.isCrossMidnight && (
+                                                <div className="text-xs text-red-600 mt-1">
+                                                  {format(new Date(pair.checkOut.timestamp), 'dd/MM/yyyy', { locale: es })}
+                                                </div>
+                                              )}
+                                            </div>
                                           </div>
+                                          {pair.checkOut.latitude && pair.checkOut.longitude && (
+                                            <a 
+                                              href={`https://www.google.com/maps/search/?api=1&query=${pair.checkOut.latitude},${pair.checkOut.longitude}`}
+                                              target="_blank"
+                                              rel="noopener noreferrer"
+                                              className="text-sm text-red-700 hover:text-red-800 flex items-center"
+                                              onClick={(e) => e.stopPropagation()}
+                                            >
+                                              <MapPin className="w-4 h-4 mr-1" />
+                                              Ubicación
+                                            </a>
+                                          )}
                                         </div>
-                                        {pair.checkOut.latitude && pair.checkOut.longitude && (
-                                          <a 
-                                            href={`https://www.google.com/maps/search/?api=1&query=${pair.checkOut.latitude},${pair.checkOut.longitude}`}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-sm text-red-700 hover:text-red-800 flex items-center"
-                                            onClick={(e) => e.stopPropagation()}
-                                          >
-                                            Ver
-                                          </a>
-                                        )}
                                       </div>
                                     ) : (
-                                      <div className="bg-gray-50 rounded-lg p-2 sm:p-3 flex items-center justify-center">
+                                      <div className="bg-gray-50 rounded-lg p-3 flex items-center justify-center">
                                         <div className="text-center text-gray-500">
                                           <div className="w-3 h-3 rounded-full bg-gray-400 mx-auto mb-2" />
                                           <p className="text-sm">Salida pendiente</p>
                                         </div>
                                       </div>
                                     )}
+                                  </div>
+                                  
+                                  {/* Duration for this pair */}
+                                  <div className="flex-shrink-0">
+                                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                                      {formatDuration(pair.duration)}
+                                    </span>
                                   </div>
                                 </div>
                               ))}
