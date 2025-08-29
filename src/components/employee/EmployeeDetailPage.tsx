@@ -477,16 +477,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
           
           {activeTab === 'profile' && employee && (
             <div className="bg-white rounded-xl shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
-                <h2 className="text-base sm:text-lg font-semibold text-gray-900 flex items-center">
-                  <Edit className="w-5 h-5 mr-2" />
-                  Gestión de Usuario
-                </h2>
-                <p className="text-sm text-gray-600 mt-1">
-                  Edita la información básica y configuración del usuario
-                </p>
-              </div>
-
               <form onSubmit={handleEditSubmit} className="p-6" autoComplete="off">
                 {editError && (
                   <div className="mb-6 p-3 bg-red-100 border border-red-200 text-red-800 rounded-lg text-sm">
