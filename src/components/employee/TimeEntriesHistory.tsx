@@ -44,7 +44,7 @@ export function TimeEntriesHistory({ pairedEntries }: TimeEntriesHistoryProps) {
                         </div>
                         {pair.checkIn.latitude && pair.checkIn.longitude && (
                           <a 
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${pair.checkIn.latitude},${pair.checkIn.longitude}`}
+                            href={`https://www.google.com/maps/search/?api=1&query=${pair.checkIn.latitude},${pair.checkIn.longitude}`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-green-700 hover:text-green-800 flex items-center"
@@ -75,7 +75,7 @@ export function TimeEntriesHistory({ pairedEntries }: TimeEntriesHistoryProps) {
                           </div>
                           {pair.checkOut.latitude && pair.checkOut.longitude && (
                             <a 
-                              href={`https://www.google.com/maps/dir/?api=1&destination=${pair.checkOut.latitude},${pair.checkOut.longitude}`}
+                              href={`https://www.google.com/maps/search/?api=1&query=${pair.checkOut.latitude},${pair.checkOut.longitude}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-sm text-red-700 hover:text-red-800 flex items-center"
