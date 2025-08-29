@@ -21,6 +21,7 @@ export function AdminDashboard() {
   const [currentView, setCurrentView] = useState<ViewMode | 'time-tracking'>('time-tracking')
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<string | null>(null)
   const [users, setUsers] = useState<Profile[]>([])
+  const [statusFilter, setStatusFilter] = useState<'active' | 'inactive' | 'all'>('active')
   const [loading, setLoading] = useState(true)
   const [showUserModal, setShowUserModal] = useState(false)
   const [editingUser, setEditingUser] = useState<Profile | null>(null)
@@ -40,7 +41,11 @@ export function AdminDashboard() {
   const loadUsers = async () => {
     const result = await handleAsync(
       () => UserService.getAllUsers(),
-      (users) => setUsers(users),
+      (users) => {
+        // Sort users alphabetically by name
+        const sortedUsers = users.sort((a, b) => a.full_name.localeCompare(b.full_name))
+        setUsers(sortedUsers)
+      },
       (error) => console.error('Error loading users:', error)
     )
     setLoading(false)
@@ -115,6 +120,13 @@ export function AdminDashboard() {
   const backToTimeTracking = () => {
     setCurrentView('time-tracking')
   }
+
+  // Filter users based on status
+  const filteredUsers = users.filter(user => {
+    if (statusFilter === 'active') return user.active
+    if (statusFilter === 'inactive') return !user.active
+    return true // 'all'
+  })
 
   if (currentView === 'time-tracking') {
     return <AdminTimeTrackingDashboard onNavigateToUsers={navigateToUsers} />
@@ -191,6 +203,43 @@ export function AdminDashboard() {
             <div className="flex flex-col space-y-3 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
               <h2 className="text-lg font-semibold text-gray-900">Gestión de Usuarios</h2>
               
+              {/* Status Filter */}
+              <div className="flex items-center space-x-2 sm:order-first sm:mr-4">
+                <span className="text-sm font-medium text-gray-700">Mostrar:</span>
+                <div className="flex rounded-lg border border-gray-300 overflow-hidden">
+                  <button
+                    onClick={() => setStatusFilter('active')}
+                    className={`px-3 py-1.5 text-sm font-medium transition-colors ${
+                      statusFilter === 'active'
+                        ? 'bg-green-100 text-green-800 border-green-300'
+                        : 'bg-white text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Activos ({users.filter(u => u.active).length})
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('inactive')}
+                    className={`px-3 py-1.5 text-sm font-medium border-l transition-colors ${
+                      statusFilter === 'inactive'
+                        ? 'bg-red-100 text-red-800 border-red-300'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'
+                    }`}
+                  >
+                    Inactivos ({users.filter(u => !u.active).length})
+                  </button>
+                  <button
+                    onClick={() => setStatusFilter('all')}
+                    className={`px-3 py-1.5 text-sm font-medium border-l transition-colors ${
+                      statusFilter === 'all'
+                        ? 'bg-blue-100 text-blue-800 border-blue-300'
+                        : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-300'
+                    }`}
+                  >
+                    Todos ({users.length})
+                  </button>
+                </div>
+              </div>
+              
               {/* Mobile: Stack buttons vertically, Desktop: Horizontal */}
               <div className="flex flex-col space-y-2 sm:flex-row sm:space-y-0 sm:space-x-3">
                 <Button 
@@ -218,7 +267,7 @@ export function AdminDashboard() {
           
           <div className="p-4 sm:p-6">
             <UserList
-              users={users}
+              users={filteredUsers}
               onViewEmployee={viewEmployeeDetail}
               onReloadUsers={loadUsers}
             />
