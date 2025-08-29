@@ -1,5 +1,4 @@
 import React from 'react'
-import { Clock } from 'lucide-react'
 import type { HeaderProps } from '../../types'
 
 export function Header({ leftContent, rightContent }: HeaderProps) {

@@ -324,22 +324,24 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
   return (
     <>
     <PageLayout>
-      <Header
-        leftContent={
-          <button
-            onClick={onBack}
-            className="inline-flex items-center px-2 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            <span className="hidden sm:inline">Volver</span>
-          </button>
-        }
-        rightContent={
-          <div className="flex items-center space-x-2">
-            {/* Empty space for future actions if needed */}
+      <header className="bg-white/90 backdrop-blur-sm shadow-sm border-b border-gray-200 sticky top-0 z-40">
+        <div className="px-4 py-3 sm:px-6 lg:px-8 lg:py-4 max-w-7xl mx-auto">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3 min-w-0 flex-1">
+              <button
+                onClick={onBack}
+                className="inline-flex items-center px-3 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 rounded-lg transition-all duration-200 shadow-sm hover:shadow-md flex-shrink-0"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                <span className="hidden sm:inline">Volver</span>
+              </button>
+            </div>
+            <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+              {/* Empty space for future actions if needed */}
+            </div>
           </div>
-        }
-      />
+        </div>
+      </header>
 
       <div className="px-4 py-4 sm:px-6 lg:px-8 lg:py-8 max-w-7xl mx-auto">
         {/* Tab Navigation */}
