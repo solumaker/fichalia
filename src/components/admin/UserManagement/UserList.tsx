@@ -150,16 +150,6 @@ export function UserList({
                       >
                         <MoreVertical className="w-4 h-4" />
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          deleteUser(user.id, user.full_name)
-                        }}
-                        className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Eliminar usuario"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
                     </>
                   )}
                 </div>
