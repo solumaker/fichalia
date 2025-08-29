@@ -136,20 +136,6 @@ export function UserList({
                   
                   {user.role === 'employee' && (
                     <>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          toggleUserStatus(user.id, user.active)
-                        }}
-                        className={`p-2 rounded-lg transition-colors ${
-                          user.active
-                            ? 'text-red-600 hover:bg-red-50'
-                            : 'text-green-600 hover:bg-green-50'
-                        }`}
-                        title={user.active ? 'Desactivar' : 'Activar'}
-                      >
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
                     </>
                   )}
                 </div>
