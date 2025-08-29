@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Phone, Building, Briefcase, Camera, X } from 'lucide-react'
+import { ArrowLeft, Download, Calendar, Edit, Trash2, Save, User, Settings, Camera, X } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Profile, TimeEntry, DateRange, UserFormData } from '../../types'
 import type { UserProfileExtended } from '../../types/shift-management.types'
@@ -637,60 +637,6 @@ export function EmployeeDetailPage({ employeeId, onBack }: EmployeeDetailPagePro
                       </div>
 
                       {/* Optional Fields */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <Phone className="w-4 h-4 inline mr-2" />
-                          Teléfono
-                        </label>
-                        <input
-                          type="tel"
-                          value={profile.phone || ''}
-                          onChange={(e) => updateProfile('phone', e.target.value)}
-                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="+34 600 000 000"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <Building className="w-4 h-4 inline mr-2" />
-                          Departamento
-                        </label>
-                        <input
-                          type="text"
-                          value={profile.department || ''}
-                          onChange={(e) => updateProfile('department', e.target.value)}
-                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Ej: Desarrollo, Marketing, Ventas"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <Briefcase className="w-4 h-4 inline mr-2" />
-                          Puesto
-                        </label>
-                        <input
-                          type="text"
-                          value={profile.position || ''}
-                          onChange={(e) => updateProfile('position', e.target.value)}
-                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                          placeholder="Ej: Desarrollador Senior, Gerente de Ventas"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          <Calendar className="w-4 h-4 inline mr-2" />
-                          Fecha de Contratación
-                        </label>
-                        <input
-                          type="date"
-                          value={profile.hire_date || ''}
-                          onChange={(e) => updateProfile('hire_date', e.target.value)}
-                          className="w-full px-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
 
                       {/* Password Change Button */}
                       <div className="md:col-span-2">
